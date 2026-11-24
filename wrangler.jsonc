@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers settings for Game N Huat.
+  // For now this only serves the demo page in the "public" folder.
+  // The game server and database are added here in the next step.
+  "name": "gamenhuat",
+  "compatibility_date": "2026-11-24",
+  "assets": {
+    "directory": "./public"
+  }
+}
