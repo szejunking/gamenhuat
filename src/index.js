@@ -278,9 +278,12 @@ const SUITS = ['S', 'H', 'D', 'C'];
 const rankOf = card => RANKS.indexOf(card.slice(0, -1)) + 1;     // A = 1 … K = 13
 
 function drawThree() {                                           // a fresh 52-card deck every hand
-  const deck = []; for (const r of RANKS) for (const s of SUITS) deck.push(r + s);
-  for (let i = deck.length - 1; i > deck.length - 4; i--) { const j = randomInt(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }
-  return deck.slice(-3);
+  for (;;) {
+    const deck = []; for (const r of RANKS) for (const s of SUITS) deck.push(r + s);
+    for (let i = deck.length - 1; i > deck.length - 4; i--) { const j = randomInt(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+    const [c1, c2, c3] = deck.slice(-3), b = bounds(c1, c2);
+    if (b.high - b.low >= 2) return [c1, c2, c3];                 // no pairs or neighbours: there is always a card in between
+  }
 }
 
 // Aces count as 1 or 14, whichever gives the wider gap: with 2–7 the Ace is 14, with 8–K it is 1, two Aces are 1 and 14.
@@ -357,13 +360,19 @@ async function choose(env, s, b, now) {
 async function settle(env, s, h, choice, now) {
   const go = choice !== 'skip';
   const o = go ? outcome(h) : { result: 'skip', points: 0 };
+  const showdown = phase(env, h.day) === 'showdown';
+  if (o.points < 0) {                                            // the score never goes below zero: lose only what you have
+    const cur = showdown
+      ? await env.DB.prepare('SELECT total_score AS v FROM players WHERE id = ?').bind(s.player_id).first()
+      : await env.DB.prepare('SELECT score AS v FROM player_days WHERE player_id = ? AND day = ?').bind(s.player_id, h.day).first();
+    o.points = -Math.min(BET, cur ? cur.v : 0);
+  }
   const claim = await env.DB.prepare(`UPDATE hands SET status = 'done', choice = ?, result = ?, points = ?, decided_at = ?
       WHERE id = ? AND status = 'open'`).bind(choice, o.result, o.points, now, h.id).run();
   if (!claim.meta.changes) {
     const again = await env.DB.prepare('SELECT * FROM hands WHERE id = ?').bind(h.id).first();
     return reveal(again);
   }
-  const showdown = phase(env, h.day) === 'showdown';
   const batch = [];
   if (o.points) {
     batch.push(env.DB.prepare('UPDATE player_days SET score = MAX(0, score + ?) WHERE player_id = ? AND day = ?').bind(o.points, s.player_id, h.day));
