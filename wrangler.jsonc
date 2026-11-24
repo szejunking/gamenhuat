@@ -1,10 +1,38 @@
 {
-  // Cloudflare Workers settings for Game N Huat.
-  // For now this only serves the demo page in the "public" folder.
-  // The game server and database are added here in the next step.
+  // Cloudflare Workers settings for Game N Huat (test site: test.gamenhuat.com).
   "name": "gamenhuat",
+  "main": "src/index.js",
   "compatibility_date": "2026-11-24",
+
+  // The page and pictures in "public". Requests to /api/... go to the game server in src/index.js.
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Database. This is the TEST database; the live one is switched in at launch.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "gamenhuat-db-test", "database_id": "c7eb714f-cd19-495d-b2bb-80baf3121d31" }
+  ],
+
+  // Email sending for sign-up and sign-in codes.
+  "send_email": [{ "name": "EMAIL" }],
+
+  // Rebuild the leaderboard every 5 minutes.
+  "triggers": { "crons": ["*/5 * * * *"] },
+
+  // Settings. TURNSTILE_SECRET is NOT here: it is added in the dashboard as a Secret.
+  "vars": {
+    "TURNSTILE_SITEKEY": "0x4AAAAAAAGP2hSKnavdhfwJL",
+    "MAIL_FROM": "Game N Huat <noreply@gamenhuat.com>",
+    "POT_DEFAULT": "1000000",
+    "TRIAL_START": "2027-01-16",
+    "SHOWDOWN_START": "2027-02-06",
+    "EVENT_END": "2027-02-20",
+    "ALLOW_EARLY": "1",   // test site: lets you play before 16 Jan. Remove on the live site.
+    "SHOW_CODES": "1"     // test site: shows the code on screen instead of emailing it. Set to "0" once email sending works.
+  },
+
+  "observability": { "enabled": true }
 }
