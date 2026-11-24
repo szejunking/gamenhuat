@@ -192,4 +192,697 @@
   .resetnote b{font-variant-numeric:tabular-nums}
   .dots{display:flex;gap:7px;align-items:center;min-height:28px;flex-wrap:wrap}
   .dot{width:18px;height:18px;border-radius:50%;background:var(--gold)}
-  .dot.used{background:transparent;border:2p
+  .dot.used{background:transparent;border:2px solid var(--line)}
+  .dot.saved{background:var(--jade)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .log{list-style:none;margin:0;padding:0;font-size:13.5px;color:var(--dim)}
+  .log li{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;gap:10px}
+  .log li:last-child{border-bottom:0}
+  .note{font-size:12.5px;color:var(--dim);margin:0}
+  ul.note,ol.note{padding-left:20px}
+  ol.note li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<svg class="goat" viewBox="0 0 400 350" aria-hidden="true" focusable="false">
+  <g fill="#f2c14e">
+    <path d="M96 196 q-26 -14 -16 -44 q14 10 26 30 z"/>
+    <ellipse cx="200" cy="212" rx="112" ry="62"/>
+    <rect x="118" y="238" width="19" height="96" rx="9"/><rect x="150" y="246" width="19" height="92" rx="9"/>
+    <rect x="236" y="246" width="19" height="92" rx="9"/><rect x="268" y="238" width="19" height="96" rx="9"/>
+    <path d="M262 186 L296 104 L338 122 L306 222 z"/>
+    <ellipse cx="324" cy="104" rx="40" ry="26" transform="rotate(18 324 104)"/>
+    <ellipse cx="288" cy="100" rx="18" ry="7" transform="rotate(-28 288 100)"/>
+    <path d="M340 126 q6 30 -10 44 q-8 -22 -6 -40 z"/>
+  </g>
+  <g fill="none" stroke="#f2c14e" stroke-width="11" stroke-linecap="round">
+    <path d="M304 84 C 296 40, 252 28, 234 60"/>
+    <path d="M320 80 C 318 34, 278 12, 254 34"/>
+  </g>
+  <circle cx="334" cy="98" r="4.5" fill="#4d0b0b"/>
+</svg>
+<div class="admodal" id="adModal" role="dialog" aria-modal="true" aria-labelledby="adTitle" hidden>
+  <div class="adbox">
+    <button type="button" class="adx" id="adX" aria-label="Close">✕</button>
+    <p class="adkicker" id="adTitle"><span id="adLead"></span><span id="adSponsor">[Sponsor A]</span></p>
+    <a class="adart" id="adArt" href="https://www.google.com/" target="_blank" rel="noopener sponsored" aria-label="Sponsor advertisement (opens in a new tab)">Sponsor Advertisement<small>320 × 480</small></a>
+    <a class="go wide advisit" id="adVisit" href="https://www.google.com/" target="_blank" rel="noopener sponsored">Visit</a>
+  </div>
+</div>
+<div class="wrap">
+  <header>
+    <h1>🧧 Challenge the <span>Banker</span></h1>
+    <a class="ad" href="https://www.google.com/" target="_blank" rel="noopener sponsored" aria-label="Sponsor advertisement (opens in a new tab)">Sponsor Advertisement</a>
+    <div class="meta" id="phaseLine"></div>
+    <div class="meta who" id="who" hidden>Signed in as <b id="whoName"></b></div>
+  </header>
+
+  <section class="panel reg" id="regScreen" aria-labelledby="regTitle">
+    <div id="welcome">
+      <div class="heroimg" role="img" aria-label="Game image placeholder">Game image<small>1 : 1</small></div>
+      <button type="button" class="go wide" id="toSignUp">Sign up</button>
+      <p class="switch"><button type="button" class="linkish" id="welcomeSignIn">Sign in</button></p>
+    </div>
+    <form id="regForm" novalidate hidden>
+      <h2 id="regTitle">Register to play</h2>
+      <label class="field">Name
+        <input type="text" id="regName" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Your full name">
+      </label>
+      <label class="field">Email address
+        <input type="email" id="regEmail" autocomplete="email" inputmode="email" placeholder="name@example.com">
+      </label>
+      <label class="field">Mobile phone number
+        <span class="prefixed"><span class="prefix" aria-hidden="true">+60</span><input type="tel" id="regPhone" autocomplete="tel-national" inputmode="numeric" pattern="[0-9]*" maxlength="11" placeholder="123456789" aria-label="Mobile phone number, after +60, numbers only"></span>
+      </label>
+      <label class="check"><input type="checkbox" id="regAgree"> <span>I agree to the gameplay rules, terms and conditions, privacy policy, PDPA notice and agree to receive promotional emails or information from the organiser and sponsors.</span></label>
+      <p class="err" id="regErr" role="alert"></p>
+      <button class="go wide" type="submit">Register</button>
+      <p class="switch"><button type="button" class="linkish" id="toSignIn">Sign in</button></p>
+    </form>
+
+    <form id="codeForm" novalidate hidden>
+      <h2>Check your email</h2>
+      <p>Code sent to <b id="codeEmail"></b>. <span id="codeWhy"></span></p>
+      <label class="field">Verification code
+        <input id="regCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      </label>
+      <p class="err" id="codeErr" role="alert"></p>
+      <button class="go wide" type="submit">Verify</button>
+      <p class="switch"><button type="button" class="linkish" id="codeBack">Back</button></p>
+    </form>
+
+    <form id="signForm" novalidate hidden>
+      <h2>Sign in</h2>
+      <label class="field">Email address
+        <input type="email" id="signEmail" autocomplete="email" inputmode="email" placeholder="name@example.com">
+      </label>
+      <p class="err" id="signErr" role="alert"></p>
+      <button class="go wide" type="submit">Sign in</button>
+      <p class="switch"><button type="button" class="linkish" id="toRegister">Register</button></p>
+    </form>
+  </section>
+
+  <div class="panel tswrap" id="tsWrap" hidden><div id="tsBox"></div></div>
+
+  <section class="panel lock" id="lockScreen" aria-labelledby="lockTitle" hidden>
+    <h2 id="lockTitle">Play paused for 1 hour</h2>
+    <p>Signed in on another device.</p>
+    <p class="lockclock">Play again at <span id="lockAt"></span></p>
+  </section>
+
+  <div id="game" hidden>
+
+  <div class="panel">
+    <h2>Banker's ang pow</h2>
+    <div class="potrow"><span class="pot" id="pot">0</span></div>
+    <div class="bar" id="potBar"><i id="potFill"></i></div>
+    <div class="sub"><span id="potState">The banker is standing</span></div>
+  </div>
+
+  <div class="panel table">
+    <div class="cards">
+      <div class="slot"><div class="card empty" id="c1"></div><div class="val" id="v1"></div></div>
+      <div class="slot"><div class="card empty" id="c3"></div><div class="val" id="v3"></div></div>
+      <div class="slot"><div class="card empty" id="c2"></div><div class="val" id="v2"></div></div>
+    </div>
+    <div class="cond" id="cond"></div>
+    <div class="banner" id="banner" aria-live="polite"></div>
+    <div class="countdown" id="countdown" hidden><span id="cdText"></span><span class="cdtrack"><i id="cdBar"></i></span></div>
+    <div class="actions">
+      <button class="go" id="dealBtn">Deal my hand</button>
+      <button class="go" id="betBtn" hidden>Go for it!</button>
+      <button id="skipBtn" hidden>Skip</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="me">
+      <div><small id="scoreLabel">Current Score</small><b id="score">0</b></div>
+      <div><small>Tries left today</small><div class="dots" id="dots"></div></div>
+    </div>
+    <div class="row">
+      <button class="small" id="inviteBtn">Invite (+1 try)</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Play History (today)</h2>
+    <ul class="log" id="log"><li><span>No hands yet</span></li></ul>
+  </div>
+
+</div>
+  <a class="ad ad2" href="https://www.google.com/" target="_blank" rel="noopener sponsored" aria-label="Sponsor advertisement (opens in a new tab)">Sponsor Advertisement</a>
+  <section class="panel pcar" aria-label="Prizes">
+    <div class="pview"><div class="ptrack" id="pTrack"></div></div>
+    <div class="pdots" id="pDots" aria-hidden="true"></div>
+  </section>
+  <section class="panel info prizespanel" aria-label="List of prizes">
+    <details id="d-prizes" class="solo">
+      <summary>List of prizes</summary>
+      <table class="prizes">
+        <thead><tr><th scope="col">Place</th><th scope="col">Prize</th></tr></thead>
+        <tbody>
+          <tr data-name="Shopping voucher" data-value="RM500" data-sponsor="[Sponsor A]"><td>1st</td><td>Shopping voucher<small>RM500 · [Sponsor A]</small></td></tr>
+          <tr data-name="Shopping voucher" data-value="RM500" data-sponsor="[Sponsor A]"><td>2nd</td><td>Shopping voucher<small>RM500 · [Sponsor A]</small></td></tr>
+          <tr data-name="Dining voucher" data-value="RM500" data-sponsor="[Sponsor B]"><td>3rd</td><td>Dining voucher<small>RM500 · [Sponsor B]</small></td></tr>
+          <tr data-name="Electronics voucher" data-value="RM500" data-sponsor="[Sponsor C]"><td>4th</td><td>Electronics voucher<small>RM500 · [Sponsor C]</small></td></tr>
+          <tr data-name="Festive hamper" data-value="RM250" data-sponsor="[Sponsor D]"><td>5th</td><td>Festive hamper<small>RM250 · [Sponsor D]</small></td></tr>
+          <tr data-name="Festive hamper" data-value="RM250" data-sponsor="[Sponsor D]"><td>6th</td><td>Festive hamper<small>RM250 · [Sponsor D]</small></td></tr>
+          <tr data-name="Grocery voucher" data-value="RM250" data-sponsor="[Sponsor E]"><td>7th</td><td>Grocery voucher<small>RM250 · [Sponsor E]</small></td></tr>
+          <tr data-name="Grocery voucher" data-value="RM250" data-sponsor="[Sponsor E]"><td>8th</td><td>Grocery voucher<small>RM250 · [Sponsor E]</small></td></tr>
+          <tr data-name="Café voucher" data-value="RM250" data-sponsor="[Sponsor F]"><td>9th</td><td>Café voucher<small>RM250 · [Sponsor F]</small></td></tr>
+          <tr data-name="Café voucher" data-value="RM250" data-sponsor="[Sponsor F]"><td>10th</td><td>Café voucher<small>RM250 · [Sponsor F]</small></td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>RM3,500</td></tr></tfoot>
+      </table>
+    </details>
+  </section>
+
+  <section class="panel lbpanel" aria-labelledby="lbTitle">
+    <h2 id="lbTitle">Leaderboard: top 50</h2>
+    <p class="note">Updates every 5 min</p>
+    <p class="lbmore" id="lbMore">Sign in to see the full top 50.</p>
+    <table class="lb">
+      <thead><tr><th scope="col">Place</th><th scope="col">Player</th><th scope="col">Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </section>
+
+  <section class="panel sponsors" aria-labelledby="spTitle">
+    <h2 id="spTitle">Our sponsors</h2>
+    <div class="sgrid" id="sGrid" aria-live="off">
+      <a class="stile" href="https://www.google.com/" target="_blank" rel="noopener sponsored"></a>
+      <a class="stile" href="https://www.google.com/" target="_blank" rel="noopener sponsored"></a>
+    </div>
+    <p class="becomesp"><a href="mailto:jk@epnox.com?subject=Interest%20to%20become%20a%20sponsor" target="_blank" rel="noopener">Become a sponsor</a></p>
+  </section>
+
+  <section class="panel info" id="info" aria-labelledby="infoTitle">
+    <h2 id="infoTitle">Rules and policies</h2>
+
+    <details id="d-rules">
+      <summary>Gameplay rules</summary>
+      <ol class="note">
+        <li>Card values: 2 to 10 count as their number, J is 11, Q is 12 and K is 13. Suits do not matter.</li>
+        <li>An Ace counts as 1 or 14. When you are dealt an Ace, the game picks the value that gives you the wider gap and shows it under the card: with a 2 to 7 the Ace counts as 14, with an 8 to K it counts as 1. Two Aces count as 1 and 14.</li>
+        <li>If the next card is an Ace, it matches your Ace if you hold one. Otherwise it is outside your two cards.</li>
+        <li>You get 3 tries a day. Each try deals you two cards from a full, freshly shuffled deck of 52. Your two cards always have at least one rank between them.</li>
+        <li>Before you choose, the game lists exactly which next cards score +100, which score the +200 double and which cost 100.</li>
+        <li>Choose "Go for it!" or "Skip". Either choice uses the try, and the next card is shown both ways.</li>
+        <li>You have 10 seconds to choose. If you do nothing, the game goes for it for you.</li>
+        <li>Your account can be used on one device only. Signing in on a new device needs a code sent to your email. There is no sign-out: if you sign in on another device, the earlier device is signed out and play is paused for 1 hour, even if you have simply changed phones.</li>
+        <li>If you go for it: a card strictly between your two cards scores +100 points. A card of the same rank as either of your cards is a double: it scores +200 points and the try is given back, so you play again. Any other card costs 100 points, but your score never goes below zero.</li>
+        <li>If you skip, your points do not change and the try is used, whatever the next card is.</li>
+        <li>Every point players score comes out of the banker's ang pow. When it is empty the banker has fallen and the game closes until tomorrow. A hand you have not yet decided on is cancelled and its try is given back.</li>
+        <li>Gold dots are today's tries and expire at the end of the day. Every invited friend gives you one extra try. You can use at most 5 extra tries a day (the green dots); the rest carry forward. Extra tries are used first, then today's 3 tries.</li>
+        <li>Trial run, 16 January to 5 February 2027: your score resets to zero every day, with a daily leaderboard.</li>
+        <li>Final showdown, 6 to 20 February 2027: every point adds to your total, and the showdown leaderboard ranks players by that total.</li>
+        <li>Points are only for the leaderboard. They cannot be bought or cashed out.</li>
+      </ol>
+    </details>
+
+    <details id="d-terms">
+      <summary>Terms and conditions</summary>
+      <ol class="note">
+        <li><b>Organiser.</b> Challenge the Banker is run by [Company Name] ([registration number]), [address].</li>
+        <li><b>Period.</b> The trial run is from 16 January to 5 February 2027. The final showdown is from 6 February to 20 February 2027, ending at [11:59 pm] Malaysia time.</li>
+        <li><b>Who can take part.</b> Residents of Malaysia aged [18] or older. Employees of the organiser and prize sponsors, and their immediate families, [may not win prizes].</li>
+        <li><b>Free to play.</b> No purchase or payment is needed. Points have no cash value and cannot be bought, sold, transferred or exchanged.</li>
+        <li><b>One account per person.</b> Each person may register one account with one email address. Duplicate, shared or fake accounts may be removed and their scores cancelled.</li>
+        <li><b>Fair play.</b> Using scripts, bots, more than one account, or any way of interfering with the game is not allowed. The organiser may cancel scores, remove accounts and withhold prizes for any breach.</li>
+        <li><b>Winners.</b> Prizes go to the players with the highest total scores in the final showdown. If two players have the same total, the player who reached it first ranks higher. Results are final once verified.</li>
+        <li><b>Prize claims.</b> Winners are contacted on the mobile number they registered within [7] days of the showdown ending, and must reply within [7] days. Winners must confirm their identity before a prize is released. Unclaimed prizes may go to the next eligible player.</li>
+        <li><b>Prizes.</b> Prizes are as listed, are not exchangeable for cash and cannot be transferred. Prize sponsors are responsible for supplying their prizes. The organiser may substitute a prize of equal or greater value.</li>
+        <li><b>Changes.</b> The organiser may change, pause or end the game, or these terms, if needed because of technical problems, misuse or circumstances beyond its control.</li>
+        <li><b>Liability.</b> To the extent allowed by law, the organiser is not responsible for lost connections, device problems or any loss from taking part.</li>
+        <li><b>Governing law.</b> These terms are governed by the laws of Malaysia.</li>
+      </ol>
+    </details>
+
+    <details id="d-privacy">
+      <summary>Privacy policy</summary>
+      <ol class="note">
+        <li><b>What we collect.</b> Your email address, your mobile number, your game records (hands played, scores, tries and invites), the type of device you use and technical data such as your IP address.</li>
+        <li><b>Why we collect it.</b> To create and secure your account, run the game and leaderboards, prevent cheating and fake accounts, contact you if you win a prize, and send you promotional emails from the organiser and sponsors.</li>
+        <li><b>Your phone number</b> is used only to contact you if you win a prize. It is never used for marketing.</li>
+        <li><b>Who we share it with.</b> Our hosting and email service providers, and Cloudflare for bot protection, who process data on our behalf. Winners' names may be shared with the sponsor of their prize to arrange delivery. We do not sell your data.</li>
+        <li><b>Marketing.</b> By registering you agree to receive promotional emails and information from the organiser and sponsors. You can ask us to stop at any time using the link in any email.</li>
+        <li><b>Storage on your phone.</b> We keep a small sign-in record in your browser so you stay signed in.</li>
+        <li><b>How long we keep it.</b> Until [3] months after the event ends, except where the law requires us to keep it longer. Then it is deleted.</li>
+        <li><b>Security.</b> Your data is stored with access limited to our admin team.</li>
+        <li><b>Contact.</b> [Data protection contact name], [email address], [phone number].</li>
+      </ol>
+    </details>
+
+    <details id="d-pdpa">
+      <summary>PDPA notice</summary>
+      <p class="note">This notice is given under Malaysia's Personal Data Protection Act 2010.</p>
+      <ol class="note">
+        <li><b>Data user.</b> [Company Name], [address].</li>
+        <li><b>Personal data processed.</b> Email address, mobile number, game records and device and technical data.</li>
+        <li><b>Purposes.</b> Account registration and security, running the game, preventing fraud, contacting prize winners, and sending promotional emails from the organiser and sponsors.</li>
+        <li><b>Source.</b> The data is collected from you when you register and play.</li>
+        <li><b>Required or optional.</b> Your email address and mobile number are required to take part. If you do not provide them you cannot register. Agreeing to receive promotional emails from the organiser and sponsors is part of registering. You can ask us to stop these emails at any time.</li>
+        <li><b>Disclosure.</b> To our service providers for hosting, email and bot protection, and to prize sponsors for delivering prizes to winners.</li>
+        <li><b>Your rights.</b> You may ask to access or correct your personal data, limit how it is processed, or withdraw your marketing consent, by contacting us below.</li>
+        <li><b>Enquiries.</b> [Data protection contact name], [email address], [phone number].</li>
+        <li><b>Language.</b> [A Bahasa Malaysia version of this notice will be provided.]</li>
+      </ol>
+    </details>
+  </section>
+  <footer class="foot">Made with lots of fun by<br>© 2026 Epnox Technologies Sdn Bhd. All rights reserved.<br><a href="https://gamenhuat.com" target="_blank" rel="noopener">Game N Huat</a></footer>
+</div>
+
+<script>
+"use strict";
+const SUITS = ['♠','♥','♦','♣'], RANKS = {11:'J',12:'Q',13:'K',14:'A'};
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const S = { me:null, hand:null, phase:'idle', autoAt:0, busy:false, score:0, log:[] };
+/* ---------- cards: the server sends 'AS', '10H' …; the page draws them ---------- */
+const SUIT_INDEX = { S:0, H:1, D:2, C:3 }, RANK_NUM = { A:14, J:11, Q:12, K:13 };
+const toCard = t => { const r = t.slice(0, -1), n = RANK_NUM[r] || Number(r); return ((n - 2) << 2) | SUIT_INDEX[t.slice(-1)]; };
+const rankOf = c => (c >> 2) + 2;
+const cardText = c => (RANKS[rankOf(c)] || rankOf(c)) + SUITS[c & 3];
+function paintCard(el, c, mode){
+  if (mode){ el.className = 'card ' + mode; el.innerHTML = ''; return; }
+  const s = SUITS[c & 3], red = (c & 3) === 1 || (c & 3) === 2;
+  el.className = 'card pop' + (red ? ' red' : '');
+  el.innerHTML = `<span class="s tl">${s}</span><span class="r">${RANKS[rankOf(c)] || rankOf(c)}</span><span class="s br">${s}</span>`;
+}
+function banner(text, cls){ const b = $('banner'); b.textContent = text; b.className = 'banner ' + (cls || ''); }
+const label = r => RANKS[r] || String(r);
+function outcomeFor(h, r){                      // r = rank of the next card (2 to 14, Ace = 14)
+  if (r === h.ra || r === h.rb) return 'post';   // same rank as one of your cards, Aces included
+  if (r === 14) return 'lose';                    // an Ace you do not hold is outside either way
+  return (r > h.lo && r < h.hi) ? 'win' : 'lose';
+}
+const orList = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' or ' + a[a.length-1] : a[0];
+function showCond(h, hit){
+  if (!h){ $('cond').innerHTML = ''; return; }
+  const win = [], post = [], lose = [];
+  for (let r = 2; r <= 14; r++){ const o = outcomeFor(h, r); (o === 'win' ? win : o === 'post' ? post : lose).push(label(r)); }
+  const row = (k, pts, text) => `<div class="${hit === k ? 'hit' : ''}"><b>${pts}</b><span>${text}</span></div>`;
+  $('cond').innerHTML = row('win', '+100', 'if the next card is ' + orList(win)) +
+    row('post', '+200', 'if it is ' + orList(post) + ' (double, and your try is returned)') +
+    row('lose', S.score > 0 ? '−100' : '0', lose.length ? 'if it is ' + orList(lose) + (S.score > 0 ? '' : ' (nothing to lose at zero)') : 'not possible with these cards');
+}
+
+function paintVal(id, rank, value){
+  const el = $(id);
+  if (rank == null){ el.className = 'val'; el.innerHTML = ''; return; }
+  el.className = 'val' + (rank === 14 ? ' ace' : '');
+  el.innerHTML = rank === 14 ? `Ace counts as <b>${value}</b>` : `Value <b>${value}</b>`;
+}
+function clearVals(){ ['v1','v2','v3'].forEach(id => paintVal(id, null)); }
+function handFrom(h){                                    // the shape showCond and the value labels expect
+  const a = toCard(h.c1), b = toCard(h.c2), ra = rankOf(a), rb = rankOf(b);
+  const lowFirst = h.v1 <= h.v2;
+  return { id: h.id, a, b, ra, rb, va: h.v1, vb: h.v2, lo: h.low, hi: h.high,
+    loLabel: label(lowFirst ? ra : rb), hiLabel: label(lowFirst ? rb : ra) };
+}
+
+/* ---------- talking to the game server ---------- */
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k, v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e){} },
+};
+const deviceId = (() => { let d = store.get('gnh-device'); if (!d){ d = (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2,'0')).join('')); store.set('gnh-device', d); } return d; })();
+let token = store.get('gnh-token');
+
+async function api(path, data){
+  const opts = { method: data === undefined ? 'GET' : 'POST', headers: {} };
+  if (data !== undefined){ opts.headers['content-type'] = 'application/json'; opts.body = JSON.stringify(data); }
+  if (token) opts.headers.Authorization = 'Bearer ' + token;
+  let r, out;
+  try { r = await fetch(path, opts); out = await r.json(); }
+  catch(e){ return { error: 'No connection. Please check your internet and try again.', status: 0 }; }
+  out.status = r.status;
+  if (r.status === 401 && token){ kickedOut(out.signedOut); }
+  else if (r.status === 423 && out.pausedUntil){ showLock(out.pausedUntil); }
+  return out;
+}
+
+/* ---------- Cloudflare Turnstile: the human check ---------- */
+let tsWidget = null, tsToken = null, tsWaiters = [];
+function tsReady(){
+  if (!window.turnstile || tsWidget !== null || !S.siteKey) return;
+  tsWidget = turnstile.render('#tsBox', { sitekey: S.siteKey, theme: 'dark', size: 'flexible',
+    callback: t => { tsToken = t; tsWaiters.splice(0).forEach(f => f(t)); },
+    'expired-callback': () => { tsToken = null; },
+    'error-callback': () => { tsToken = null; } });
+}
+window.onTurnstileLoad = tsReady;
+function humanCheck(){                                    // a fresh token for each request that needs one
+  $('tsWrap').hidden = false;
+  if (tsToken){ const t = tsToken; tsToken = null; setTimeout(() => { if (window.turnstile && tsWidget !== null) turnstile.reset(tsWidget); }, 0); return Promise.resolve(t); }
+  return new Promise(res => tsWaiters.push(t => { tsToken = null; setTimeout(() => turnstile.reset(tsWidget), 0); res(t); }));
+}
+
+/* ---------- screens ---------- */
+function showForm(id){
+  ['welcome','regForm','codeForm','signForm'].forEach(f => $(f).hidden = f !== id);
+  ['regErr','codeErr','signErr'].forEach(e => $(e).textContent = '');
+  $('tsWrap').hidden = !(id === 'regForm' || id === 'signForm');
+  const first = $(id).querySelector('input'); if (first && first.focus) first.focus();
+}
+function showReg(form){
+  lockLeaderboard(true); S.me = null; S.phase = 'idle'; S.autoAt = 0;
+  $('lockScreen').hidden = true; $('regScreen').hidden = false; $('game').hidden = true; $('who').hidden = true;
+  showForm(form || 'welcome'); loadLeaderboard();
+}
+let lockTimer = null;
+function showLock(until){
+  lockLeaderboard(true); S.phase = 'idle'; S.autoAt = 0;
+  $('regScreen').hidden = true; $('game').hidden = true; $('adModal').hidden = true; $('tsWrap').hidden = true;
+  $('lockScreen').hidden = false;
+  $('lockAt').textContent = new Date(until).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+  clearTimeout(lockTimer);
+  lockTimer = setTimeout(refresh, Math.max(1000, until - Date.now() + 1500));   // play resumes on its own
+}
+function kickedOut(){                                     // this phone's key was replaced by a newer phone
+  token = null; store.set('gnh-token', null);
+  $('adModal').hidden = true;
+  showReg('signForm');
+  $('signErr').textContent = 'Signed in on another device. Paused 1 hour.';
+}
+
+/* ---------- the game screen ---------- */
+function paint(){
+  const me = S.me; if (!me) return;
+  $('phaseLine').textContent = (me.phase === 'showdown' ? 'Final showdown' : me.phase === 'ended' ? 'The game has ended' : 'Trial run') + ' · ' +
+    new Date(me.day + 'T00:00:00+08:00').toLocaleDateString('en-MY', { weekday:'short', day:'numeric', month:'short' });
+  $('pot').textContent = fmt(me.potLeft);
+  const share = me.potStart ? me.potLeft / me.potStart : 0;
+  $('potFill').style.width = (share*100) + '%';
+  $('potBar').className = 'bar' + (share < 0.2 ? ' low' : '');
+  $('potState').textContent = me.beaten ? 'Banker has been beaten! Come back tomorrow!' : share < 0.2 ? 'The banker is wobbling' : 'The banker is standing';
+  S.score = me.phase === 'showdown' ? me.totalScore : me.score;
+  $('scoreLabel').textContent = me.phase === 'showdown' ? 'Total Score' : 'Current Score';
+  $('score').textContent = fmt(S.score);
+  const t = me.tries, later = Math.max(0, t.extraBanked - t.extra);
+  let dots = '';
+  for (let i = 0; i < t.extra; i++) dots += '<span class="dot saved" title="Extra try you can use today"></span>';
+  for (let i = 0; i < 3; i++) dots += `<span class="dot${i < t.daily ? '' : ' used'}" title="${i < t.daily ? "Today's try" : 'Used'}"></span>`;
+  if (later > 0) dots += `<span class="meta">+${later} saved for later</span>`;
+  $('dots').innerHTML = dots;
+  $('dots').setAttribute('aria-label', `${t.daily} of today's tries and ${t.extra} extra tries left today, ${later} saved for later`);
+  const choosing = S.phase === 'choose';
+  $('dealBtn').hidden = choosing; $('betBtn').hidden = !choosing; $('skipBtn').hidden = !choosing;
+  $('dealBtn').disabled = S.busy || me.beaten || t.daily + t.extra === 0 || me.phase === 'ended' || me.phase === 'not_started';
+  $('betBtn').disabled = $('skipBtn').disabled = S.busy;
+  $('dealBtn').textContent = S.phase === 'result' ? 'Next' : 'Deal my hand';
+  const log = (me.history || []).slice().reverse();
+  $('log').innerHTML = log.length ? log.map(h => {
+    const cards = [h.c1, h.c3, h.c2].map(c => cardText(toCard(c))).join(' · ');
+    const text = h.choice === 'skip' ? 'Skipped' : h.result === 'match' ? '+200, try returned' : h.result === 'between' ? '+100' : h.points < 0 ? '−100' : 'Outside';
+    return `<li><span>${cards}</span><span class="${h.points > 0 ? 'pos' : h.points < 0 ? 'neg' : ''}">${text}${h.choice === 'auto' ? ' (auto)' : ''}</span></li>`;
+  }).join('') : '<li><span>No hands yet</span></li>';
+}
+
+function enterGame(me){
+  S.me = me; lockLeaderboard(false); clearTimeout(lockTimer);
+  $('lockScreen').hidden = true; $('regScreen').hidden = true; $('game').hidden = false;
+  $('whoName').textContent = me.name; $('who').hidden = false;
+  if (me.openHand) showHand(me.openHand);
+  else if (S.phase !== 'result'){ S.phase = 'idle'; ['c1','c2','c3'].forEach(id => paintCard($(id), null, 'empty')); clearVals(); showCond(null);
+    banner(me.beaten ? 'Banker has been beaten! Come back tomorrow!' : me.phase === 'not_started' ? 'The game starts on 16 January 2027.' :
+      me.phase === 'ended' ? 'The game has ended. Thank you for playing!' : `You have ${me.tries.daily + me.tries.extra} tries today.`, me.beaten ? 'gold' : ''); }
+  paint(); maybeShowAd(); loadLeaderboard();
+}
+
+async function refresh(){
+  if (!token){ showReg('welcome'); return; }
+  const me = await api('/api/me');
+  if (me.status === 200){
+    if (me.pausedUntil) return showLock(me.pausedUntil);
+    if (me.needVisit){ $('tsWrap').hidden = false; const v = await api('/api/visit', { turnstile: await humanCheck() }); $('tsWrap').hidden = true; if (v.status !== 200){ banner(v.error || 'The human check failed.', 'lose'); } }
+    enterGame(me);
+  } else if (me.status !== 401 && me.status !== 423){
+    showReg('welcome'); $('regErr').textContent = me.error || '';
+  }
+}
+
+function showHand(h){
+  S.hand = handFrom(h);
+  paintCard($('c1'), S.hand.a); paintCard($('c2'), S.hand.b); paintCard($('c3'), null, 'back');
+  paintVal('v1', S.hand.ra, S.hand.va); paintVal('v2', S.hand.rb, S.hand.vb); paintVal('v3', null);
+  showCond(S.hand);
+  banner('Go for it or skip? Either one uses this try.');
+  S.phase = 'choose'; S.autoAt = Date.now() + h.secondsLeft * 1000; paintCountdown(); paint();
+}
+
+async function deal(){
+  if (S.busy || S.phase === 'choose') return;
+  S.busy = true; paint();
+  const r = await api('/api/deal', {});
+  S.busy = false;
+  if (r.status === 200 && r.hand){ showHand(r.hand); return; }
+  if (r.needVisit){ await refresh(); return; }
+  if (r.status !== 401 && r.status !== 423){ banner(r.error || 'Please try again.', r.beaten ? 'gold' : ''); await reloadMe(); }
+}
+
+async function choose(go, auto){
+  if (S.phase !== 'choose' || S.busy) return;
+  S.busy = true; S.autoAt = 0; paintCountdown(); paint();
+  const h = S.hand;
+  const r = await api('/api/choose', { hand_id: h.id, go });
+  S.busy = false;
+  if (r.status !== 200 || !r.result){ if (r.status !== 401 && r.status !== 423){ banner(r.error || 'Please try again.', 'lose'); S.phase = 'idle'; await reloadMe(); } return; }
+  const res = r.result, c = toCard(res.c3), rk = rankOf(c);
+  const outcome = res.result === 'between' ? 'win' : res.result === 'match' ? 'post' : res.result === 'outside' ? 'lose' : outcomeFor(h, rk);
+  paintCard($('c3'), c); showCond(h, outcome);
+  if (rk !== 14) paintVal('v3', rk, rk);
+  else if (h.ra === 14 && h.rb === 14){ $('v3').className = 'val ace'; $('v3').innerHTML = 'Ace: <b>matches</b>'; }
+  else if (h.ra === 14 || h.rb === 14) paintVal('v3', 14, h.ra === 14 ? h.va : h.vb);
+  else { $('v3').className = 'val ace'; $('v3').innerHTML = 'Ace: <b>outside</b>'; }
+  const t = label(rk), pair = h.loLabel + ' and ' + h.hiLabel, scoreBefore = S.score;
+  let msg, cls = '';
+  if (res.choice === 'skip'){
+    msg = outcome === 'win' ? `Skipped. ${t} was between ${pair}.` : outcome === 'lose' ? `Skipped. Good call, ${t} was outside ${pair}.` : `Skipped. ${t} matched your ${t}: that was a double.`;
+  } else if (outcome === 'win'){ msg = `${t} is between ${pair}. +100 points. Huat ah!`; cls = 'win'; }
+  else if (outcome === 'post'){ msg = `${t} matches your ${t}. Double! +200 points, and you get this try back.`; cls = 'gold'; }
+  else { msg = scoreBefore > 0 ? `${t} is outside ${pair}. −100 points.` : `${t} is outside ${pair}. Nothing lost: your score never goes below zero.`; cls = scoreBefore > 0 ? 'lose' : ''; }
+  if (auto) msg = "Time's up, so the game went for it. " + msg;
+  banner(msg, cls);
+  S.phase = 'result'; S.hand = null;
+  await reloadMe();
+  const me = S.me;
+  if (me && !me.beaten && me.tries.daily + me.tries.extra === 0){
+    $('banner').textContent += me.tries.extraBanked > 0 ? ` That is today's limit. Your ${me.tries.extraBanked} saved tries carry forward.` : ' No tries left today. Come back tomorrow!';
+    setTimeout(maybeShowEndAd, 1800);                     // let the result show first
+  }
+}
+
+async function reloadMe(){
+  const me = await api('/api/me');
+  if (me.status === 200){ S.me = me; paint(); }
+}
+
+/* ---------- 10-second choice timer ---------- */
+function paintCountdown(){
+  const el = $('countdown');
+  if (!S.autoAt || S.phase !== 'choose'){ el.hidden = true; return; }
+  const left = Math.max(0, S.autoAt - Date.now()), secs = Math.ceil(left/1000);
+  el.hidden = false;
+  el.className = 'countdown' + (secs <= 3 ? ' urgent' : '');
+  $('cdText').innerHTML = `Choose within <b>${secs}</b> ${secs === 1 ? 'second' : 'seconds'} or the game will auto choose.`;
+  $('cdBar').style.width = (left / 10000 * 100) + '%';
+}
+setInterval(() => {
+  if (!S.autoAt || S.phase !== 'choose') return;
+  if (Date.now() >= S.autoAt) choose(true, true); else paintCountdown();
+}, 200);
+
+$('dealBtn').addEventListener('click', deal);
+$('betBtn').addEventListener('click', () => choose(true));
+$('skipBtn').addEventListener('click', () => choose(false));
+
+/* ---------- invites: share a link with your code ---------- */
+$('inviteBtn').addEventListener('click', async () => {
+  if (!S.me) return;
+  const link = location.origin + '/?ref=' + S.me.inviteCode;
+  const text = 'Join me in Challenge the Banker this CNY! Sign up with my link:';
+  try {
+    if (navigator.share){ await navigator.share({ title: 'Challenge the Banker', text, url: link }); return; }
+    await navigator.clipboard.writeText(text + ' ' + link);
+    banner('Invite link copied. You get +1 try when a friend signs up with it.', 'gold');
+  } catch(e){ banner('Your invite link: ' + link); }
+});
+const refCode = (new URLSearchParams(location.search).get('ref') || store.get('gnh-ref') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+if (refCode) store.set('gnh-ref', refCode);               // keep it if the friend signs up later
+
+/* ---------- leaderboard: top 5 for visitors, top 50 when signed in ---------- */
+async function loadLeaderboard(){
+  const r = await api('/api/leaderboard');
+  if (r.status !== 200) return;
+  $('lbTitle').textContent = r.board === 'showdown' ? 'Leaderboard: top 50' : "Today's leaderboard: top 50";
+  $('lbBody').innerHTML = r.rows.length ? r.rows.map(x => `<tr${x.rank <= 10 ? ' class="prize"' : ''}><td>${x.rank}</td><td>${x.name.replace(/[<>&"]/g, '')}</td><td>${fmt(x.score)}</td></tr>`).join('')
+    : '<tr><td></td><td>No scores yet. Be the first!</td><td></td></tr>';
+}
+setInterval(() => { if (!document.hidden) loadLeaderboard(); }, 5 * 60 * 1000);
+function lockLeaderboard(on){ const p = document.querySelector('.lbpanel'); if (p) p.classList.toggle('locked', on); }
+/* ---------- prize carousel: slides in a random order, the table lists every prize ---------- */
+(function prizeCarousel(){
+  const icons = { 'Shopping voucher':'🛍️', 'Dining voucher':'🍽️', 'Electronics voucher':'📱', 'Festive hamper':'🎁', 'Grocery voucher':'🛒', 'Café voucher':'☕' };
+  const seen = {}, prizes = [];
+  document.querySelectorAll('table.prizes tbody tr').forEach(tr => {
+    const { name, value, sponsor } = tr.dataset;
+    if (seen[name]) return; seen[name] = 1;                          // one slide per kind of prize
+    prizes.push({ name, value, sponsor, icon: icons[name] || '🏆' });
+  });
+  for (let i = prizes.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [prizes[i], prizes[j]] = [prizes[j], prizes[i]]; }
+  $('pTrack').innerHTML = prizes.map(p => '<div class="pslide"><div class="pbox" role="img" aria-label="' + p.name + ', ' + p.value + ', by ' + p.sponsor + '"><span class="pic" aria-hidden="true">' + p.icon + '</span>' + p.name + '<small>' + p.value + ' · ' + p.sponsor + '</small></div></div>').join('');
+  const stops = Math.max(1, prizes.length - 1);                        // two prizes show at once, moving one at a time
+  $('pDots').innerHTML = '<i></i>'.repeat(stops);
+  let at = 0, paused = false;
+  const go = n => { at = n; $('pTrack').style.transform = 'translateX(' + (-50 * at) + '%)'; Array.from($('pDots').children).forEach((d, k) => d.classList.toggle('on', k === at)); };
+  const view = document.querySelector('.pview');
+  view.addEventListener('mouseenter', () => paused = true); view.addEventListener('mouseleave', () => paused = false);
+  let x0 = null;                                                      // swipe left or right on a phone
+  view.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; paused = true; }, { passive:true });
+  view.addEventListener('touchend', e => { if (x0 !== null){ const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) go((at + (dx < 0 ? 1 : stops - 1)) % stops); } x0 = null; paused = false; });
+  go(0);
+  setInterval(() => { if (!paused && !document.hidden) go((at + 1) % stops); }, 3500);
+})();
+/* ---------- sponsor carousel: two random sponsors at a time ---------- */
+(function sponsorCarousel(){
+  const pool = [['🏮','[Sponsor A]','Shopping'],['🍊','[Sponsor B]','Dining'],['📱','[Sponsor C]','Electronics'],['🎁','[Sponsor D]','Hampers'],
+                ['🛒','[Sponsor E]','Groceries'],['☕','[Sponsor F]','Café'],['🚗','[Sponsor G]','Auto'],['🏦','[Sponsor H]','Banking']];
+  const tiles = Array.from($('sGrid').querySelectorAll('.stile')); let shown = [];
+  function pick(){
+    const free = pool.map((_, i) => i).filter(i => !shown.includes(i));          // always bring in sponsors not on screen
+    for (let i = free.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [free[i], free[j]] = [free[j], free[i]]; }
+    return free.slice(0, 2);
+  }
+  function render(){
+    shown = pick();
+    tiles.forEach((t, k) => { const [logo, name, kind] = pool[shown[k]];
+      t.innerHTML = '<span class="logo" aria-hidden="true">' + logo + '</span>' + name + '<small>' + kind + '</small>';
+      t.setAttribute('aria-label', 'Visit ' + name + ' (opens in a new tab)'); t.classList.remove('fade'); });
+  }
+  let paused = false;
+  $('sGrid').addEventListener('mouseenter', () => paused = true); $('sGrid').addEventListener('mouseleave', () => paused = false);
+  $('sGrid').addEventListener('focusin', () => paused = true);   $('sGrid').addEventListener('focusout', () => paused = false);
+  render();
+  setInterval(() => { if (paused || document.hidden) return; tiles.forEach(t => t.classList.add('fade')); setTimeout(render, 350); }, 4000);
+})();
+/* ---------- daily sponsor pop-up: once a day for signed-in players ---------- */
+const AD_SPONSORS = [                                  // placeholder sponsors and links
+  { name:'[Sponsor A]', url:'https://www.google.com/' }, { name:'[Sponsor B]', url:'https://www.google.com/' },
+  { name:'[Sponsor C]', url:'https://www.google.com/' }, { name:'[Sponsor D]', url:'https://www.google.com/' },
+  { name:'[Sponsor E]', url:'https://www.google.com/' }, { name:'[Sponsor F]', url:'https://www.google.com/' } ];
+function openAd(lead){
+  const sp = AD_SPONSORS[Number((S.me && S.me.day || '0').slice(-2)) % AD_SPONSORS.length];
+  $('adLead').textContent = lead ? lead + ' · ' : '';
+  $('adSponsor').textContent = sp.name;
+  $('adVisit').href = sp.url; $('adArt').href = sp.url; $('adVisit').textContent = 'Visit';
+  $('adModal').hidden = false;
+  const v = $('adVisit'); if (v.focus) v.focus();
+}
+function maybeShowEndAd(){                               // once a day, after the last try is used
+  if (!S.me || store.get('gnh-endad') === S.me.day) return;
+  store.set('gnh-endad', S.me.day); openAd('Thanks for playing today');
+}
+function maybeShowAd(){                                  // once a day, when a signed-in player arrives
+  if (!S.me || store.get('gnh-ad') === S.me.day) return;
+  store.set('gnh-ad', S.me.day); openAd('');
+}
+function closeAd(){ $('adModal').hidden = true; const d = $('dealBtn'); if (d.focus) d.focus(); }
+$('adX').addEventListener('click', closeAd);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('adModal').hidden) closeAd(); });
+
+/* ---------- rules and policies: one open at a time ---------- */
+const infoBoxes = ['d-rules','d-terms','d-privacy','d-pdpa'].map(id => $(id));
+infoBoxes.forEach(d => d.addEventListener('toggle', () => { if (d.open) infoBoxes.forEach(o => { if (o !== d) o.open = false; }); }));
+function openInfo(id){ const d = $(id); d.open = true; infoBoxes.forEach(o => { if (o !== d) o.open = false; }); if (d.scrollIntoView) d.scrollIntoView({ behavior:'smooth', block:'start' }); }
+if (document.querySelectorAll) document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); openInfo(b.dataset.open); }));
+
+/* ---------- registration and sign-in ---------- */
+const DISPOSABLE = ['mailinator.com','guerrillamail.com','10minutemail.com','tempmail.com','temp-mail.org','yopmail.com','trashmail.com','sharklasers.com'];
+function checkEmail(raw){
+  const email = raw.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error:'Please enter a valid email address.' };
+  const [local, domain] = email.toLowerCase().split('@');
+  if (local.includes('+')) return { error:'Email addresses containing a "+" cannot be used. Please use your main address.' };
+  if (DISPOSABLE.includes(domain)) return { error:'Temporary email addresses cannot be used. Please use your main address.' };
+  return { email };
+}
+function checkPhone(raw){
+  let d = raw.trim();
+  if (!/^\d+$/.test(d)) return { error:'Please use numbers only, with no dashes or spaces. For example 123456789.' };
+  if (d.startsWith('0')) d = d.slice(1);
+  if (!/^1\d{8,9}$/.test(d)) return { error:'Please enter your Malaysian mobile number after +60, for example 123456789.' };
+  return { phone: d };
+}
+$('regPhone').addEventListener('input', e => {                                             // drop anything that is not a digit as it is typed or pasted
+  const v = e.target.value, digits = v.replace(/\D/g, '');
+  if (v !== digits){ e.target.value = digits; $('regErr').textContent = 'Numbers only, please: no dashes or spaces.'; }
+});
+let pending = null;
+function askCode(email, why, testCode){
+  $('codeEmail').textContent = email; $('codeWhy').textContent = why; $('regCode').value = testCode || '';
+  showForm('codeForm');
+  if (testCode) $('codeErr').textContent = 'Test site: the code is filled in for you.';
+}
+async function submitWith(btn, fn){ btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } }
+
+$('regForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('regName').value.trim().replace(/\s+/g, ' '), em = checkEmail($('regEmail').value), ph = checkPhone($('regPhone').value), err = $('regErr');
+  if (name.length < 2){ err.textContent = 'Please enter your name.'; return; }
+  if (em.error){ err.textContent = em.error; return; }
+  if (ph.error){ err.textContent = ph.error; return; }
+  if (!$('regAgree').checked){ err.textContent = 'Please tick the box to agree before continuing.'; return; }
+  submitWith(e.submitter || $('regForm').querySelector('[type=submit]'), async () => {
+    err.textContent = 'Checking…';
+    const r = await api('/api/register', { name, email: em.email, phone: ph.phone, agree: true, invite: refCode, turnstile: await humanCheck() });
+    if (r.status !== 200){ err.textContent = r.error || 'Please try again.'; return; }
+    pending = { mode: 'register', email: em.email };
+    askCode(em.email, '', r.testCode);
+  });
+});
+$('signForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const em = checkEmail($('signEmail').value), err = $('signErr');
+  if (em.error){ err.textContent = em.error; return; }
+  submitWith(e.submitter || $('signForm').querySelector('[type=submit]'), async () => {
+    err.textContent = 'Checking…';
+    const r = await api('/api/signin', { email: em.email, turnstile: await humanCheck() });
+    if (r.status !== 200){ err.textContent = r.error || 'Please try again.'; return; }
+    pending = { mode: 'signin', email: em.email };
+    askCode(em.email, 'If this account is on another device, that device will be signed out and play paused for 1 hour.', r.testCode);
+  });
+});
+$('codeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const code = $('regCode').value.trim();
+  if (!/^\d{6}$/.test(code)){ $('codeErr').textContent = 'Please enter the 6-digit code from your email.'; return; }
+  if (!pending) return showForm('welcome');
+  submitWith(e.submitter || $('codeForm').querySelector('[type=submit]'), async () => {
+    const r = await api('/api/verify', { email: pending.email, code, device_id: deviceId });
+    if (r.status !== 200 || !r.token){ $('codeErr').textContent = r.error || 'Please try again.'; return; }
+    token = r.token; store.set('gnh-token', token); pending = null;
+    if (refCode) store.set('gnh-ref', null);
+    if (r.pausedUntil > Date.now()) return showLock(r.pausedUntil);
+    await refresh();
+  });
+});
+$('toSignIn').addEventListener('click', () => showForm('signForm'));
+$('toSignUp').addEventListener('click', () => showForm('regForm'));
+$('welcomeSignIn').addEventListener('click', () => showForm('signForm'));
+$('toRegister').addEventListener('click', () => showForm('regForm'));
+$('codeBack').addEventListener('click', () => showForm(pending && pending.mode === 'signin' ? 'signForm' : 'regForm'));
+
+/* ---------- start ---------- */
+setInterval(() => { if (S.me && !document.hidden && S.phase !== 'choose' && !S.busy) reloadMe(); }, 60 * 1000);   // keep the ang pow fresh
+(async function start(){
+  const cfg = await api('/api/config');
+  S.siteKey = cfg.turnstileSiteKey; tsReady();
+  if (refCode && !token){ showReg('regForm'); } else await refresh();
+})();
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad" async defer></script>
+<style>.pos{color:var(--win)}.neg{color:var(--lose)}.tswrap{padding:10px;display:flex;justify-content:center;min-height:65px}</style>
+</body>
+</html>
