@@ -557,6 +557,27 @@ async function admin(env, request, url, now) {
     return json({ total: total.n, rows: rows.results });
   }
 
+  if (m === 'POST' && p === 'player') {                         // admins may change only the mobile number
+    const b = await body(request), id = Number(b.id), phone = checkPhone(b.phone);
+    const player = await env.DB.prepare('SELECT id, phone FROM players WHERE id = ?').bind(id).first();
+    if (!player) fail(404, 'Player not found.');
+    if (await env.DB.prepare('SELECT 1 FROM players WHERE phone = ? AND id != ?').bind(phone, id).first()) fail(409, 'Another player already has this mobile number.');
+    await env.DB.batch([
+      env.DB.prepare('UPDATE players SET phone = ? WHERE id = ?').bind(phone, id),
+      audit(env, now, id, 'admin_phone', `${player.phone} → ${phone} by ${who}`),
+    ]);
+    return json({ ok: true, phone });
+  }
+
+  if (m === 'POST' && p === 'player/reset') {                   // clears the sign-in and any pause, so the player can sign in again
+    const b = await body(request), id = Number(b.id);
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM sessions WHERE player_id = ?').bind(id),
+      audit(env, now, id, 'admin_reset', 'by ' + who),
+    ]);
+    return json({ ok: true });
+  }
+
   if (m === 'GET' && p === 'leaderboard') {
     const board = q.get('board') === 'showdown' ? 'showdown' : 'daily';
     const rows = board === 'showdown'
