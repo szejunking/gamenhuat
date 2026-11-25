@@ -39,8 +39,8 @@
     "SHOW_CODES": "0",    // "1" shows the code on screen instead of emailing it (only for testing without email)
     "GA_ID": "",          // Google Analytics Measurement ID, for example "G-ABC123XYZ". Empty = off.
     "ADMIN_EMAILS": "jk@epnox.com",   // who may use the admin panel (comma-separated)
-    "ACCESS_TEAM": "",    // your Cloudflare Zero Trust team name (the part before .cloudflareaccess.com)
-    "ACCESS_AUD": ""      // the Application Audience (AUD) tag of the admin.gamenhuat.com Access application
+    "ACCESS_TEAM": "epnox",
+    "ACCESS_AUD": "8bb32c8d9ccc8b8bf238ddc9c687c60722ee685651f4133f211554659c7f1f5b"    
   },
 
   "observability": { "enabled": true }
