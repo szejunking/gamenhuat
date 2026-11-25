@@ -8,12 +8,17 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/media/*"]
   },
 
   // Database. This is the TEST database; the live one is switched in at launch.
   "d1_databases": [
     { "binding": "DB", "database_name": "gamenhuat-db-test", "database_id": "c7eb714f-cd19-495d-b2bb-80baf3121d31" }
+  ],
+
+  // Pictures uploaded in the admin panel (sponsor banners, pop-ups, logos, prizes).
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "gamenhuat-media" }
   ],
 
   // Email sending for sign-up and sign-in codes.
@@ -31,7 +36,11 @@
     "SHOWDOWN_START": "2027-02-06",
     "EVENT_END": "2027-02-20",
     "ALLOW_EARLY": "1",   // test site: lets you play before 16 Jan. Remove on the live site.
-    "SHOW_CODES": "1"     // test site: shows the code on screen instead of emailing it. Set to "0" once email sending works.
+    "SHOW_CODES": "0",    // "1" shows the code on screen instead of emailing it (only for testing without email)
+    "GA_ID": "",          // Google Analytics Measurement ID, for example "G-ABC123XYZ". Empty = off.
+    "ADMIN_EMAILS": "jk@epnox.com",   // who may use the admin panel (comma-separated)
+    "ACCESS_TEAM": "",    // your Cloudflare Zero Trust team name (the part before .cloudflareaccess.com)
+    "ACCESS_AUD": ""      // the Application Audience (AUD) tag of the admin.gamenhuat.com Access application
   },
 
   "observability": { "enabled": true }

@@ -5,6 +5,8 @@ import worker, { _test } from '../src/index.js';
 
 const sql = new DatabaseSync(':memory:');
 sql.exec(readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8'));
+sql.exec(readFileSync(new URL('../migrations/0002_admin.sql', import.meta.url), 'utf8'));
+globalThis.caches = { default: { match: async () => null, put: async () => {} } };
 class Stmt { constructor(q){ this.q = q; this.args = []; } bind(...a){ this.args = a; return this; }
   async first(){ return sql.prepare(this.q).get(...this.args) ?? null; }
   async all(){ return { results: sql.prepare(this.q).all(...this.args) }; }
@@ -13,12 +15,22 @@ const DB = { prepare: q => new Stmt(q), async batch(list){ sql.exec('BEGIN'); tr
 const sent = [];
 const env = { DB, ASSETS: { fetch: () => new Response('page') }, EMAIL: { send: async m => { sent.push(m); return { messageId: 'x' }; } },
   TURNSTILE_SECRET: 's', TURNSTILE_SITEKEY: 'k', MAIL_FROM: 'Game N Huat <noreply@gamenhuat.com>', POT_DEFAULT: '1000000',
-  TRIAL_START: '2027-01-16', SHOWDOWN_START: '2027-02-06', EVENT_END: '2027-02-20', ALLOW_EARLY: '1', SHOW_CODES: '0' };
-globalThis.fetch = async () => new Response(JSON.stringify({ success: true }));   // Turnstile always passes here
+  TRIAL_START: '2027-01-16', SHOWDOWN_START: '2027-02-06', EVENT_END: '2027-02-20', ALLOW_EARLY: '1', SHOW_CODES: '0',
+  ACCESS_TEAM: 'epnox', ACCESS_AUD: 'AUD1', ADMIN_EMAILS: 'jk@epnox.com', MEDIA: { put: async () => {}, get: async () => null, delete: async () => {} } };
+// Admin sign-in: a stand-in for Cloudflare Access with its own signing key.
+const kp = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+const pub = { ...(await crypto.subtle.exportKey('jwk', kp.publicKey)), kid: 'k1' };
+const b64u = buf => Buffer.from(buf).toString('base64url');
+async function accessJwt(email, aud = 'AUD1') {
+  const h = b64u(JSON.stringify({ alg: 'RS256', kid: 'k1' })), p = b64u(JSON.stringify({ email, aud: [aud], exp: Math.floor(clock / 1000) + 3600 }));
+  return h + '.' + p + '.' + b64u(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', kp.privateKey, new TextEncoder().encode(h + '.' + p)));
+}
+globalThis.fetch = async u => String(u).includes('cloudflareaccess.com') ? new Response(JSON.stringify({ keys: [pub] }))
+  : new Response(JSON.stringify({ success: true }));   // Turnstile always passes here
 
 let clock = Date.parse('2026-11-25T02:00:00Z'); Date.now = () => clock;
-const call = async (method, path, body, token) => {
-  const r = await worker.fetch(new Request('https://test.gamenhuat.com' + path, { method, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined }), env, { waitUntil(){} });
+const call = async (method, path, body, token, host = 'test.gamenhuat.com', extra = {}) => {
+  const r = await worker.fetch(new Request('https://' + host + path, { method, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...extra }, body: body ? JSON.stringify(body) : undefined }), env, { waitUntil(){} });
   return { status: r.status, ...(await r.json()) };
 };
 const ok = (cond, msg) => { if (!cond) { console.error('FAIL:', msg); process.exitCode = 1; } else console.log('ok -', msg); };
@@ -45,11 +57,14 @@ ok(r.status === 400, 'wrong code refused');
 r = await call('POST', '/api/verify', { email: 'tan@example.com', code: lastCode(), device_id: 'aaaaaaaaaaaaaaaa' });
 ok(r.token && r.pausedUntil === 0, 'right code gives a session');
 const tokA = r.token;
-r = await call('POST', '/api/register', { name: 'Tan', email: 't.a.n@example.com', phone: '0123456789', agree: true, turnstile: 't' });
+r = await call('POST', '/api/register', { name: 'Tan', email: 't.a.n@example.com', phone: '0111111111', agree: true, turnstile: 't' });
 ok(r.status === 200, 'different non-Gmail address may register');
 clock += 61_000;
 r = await call('POST', '/api/register', { name: 'Again', email: 'tan@example.com', phone: '0123456789', agree: true, turnstile: 't' });
 ok(r.status === 409, 'duplicate email refused');
+
+r = await call('POST', '/api/register', { name: 'Copy Cat', email: 'copy@example.com', phone: '123456789', agree: true, turnstile: 't' });
+ok(r.status === 409 && /mobile number/.test(r.error), 'a phone number can only register once');
 
 // Invites
 let me = await call('GET', '/api/me', null, tokA);
@@ -102,3 +117,27 @@ const lbMember = await call('GET', '/api/leaderboard', null, tokB);
 ok(lbVisitor.rows.length <= 5 && !lbVisitor.signedIn, 'visitors get at most 5 rows');
 ok(lbMember.signedIn, 'signed-in players get the full board');
 console.log('leaderboard:', JSON.stringify(lbVisitor.rows));
+
+// Admin panel
+let a = await call('GET', '/api/admin/players', null, null, 'test.gamenhuat.com', { 'Cf-Access-Jwt-Assertion': await accessJwt('jk@epnox.com') });
+ok(a.status === 404, 'admin is refused on the game address');
+a = await call('GET', '/api/admin/players', null, null, 'admin.gamenhuat.com');
+ok(a.status === 403, 'admin is refused without an Access sign-in');
+a = await call('GET', '/api/admin/players', null, null, 'admin.gamenhuat.com', { 'Cf-Access-Jwt-Assertion': await accessJwt('someone@else.com') });
+ok(a.status === 403, 'admin is refused for an email not on the list');
+const forged = (await accessJwt('jk@epnox.com')).replace(/\.[^.]+$/, '.AAAA');
+a = await call('GET', '/api/admin/players', null, null, 'admin.gamenhuat.com', { 'Cf-Access-Jwt-Assertion': forged });
+ok(a.status === 403, 'admin is refused with a forged sign-in');
+const adm = async (m, path, b) => call(m, path, b, null, 'admin.gamenhuat.com', { 'Cf-Access-Jwt-Assertion': await accessJwt('jk@epnox.com') });
+a = await adm('GET', '/api/admin/players');
+ok(a.status === 200 && a.rows.length >= 2 && 'reg_ip' in a.rows[0], `admin sees ${a.total} players with IP addresses`);
+a = await adm('GET', '/api/admin/lockouts');
+ok(a.rows.length === 1 && a.rows[0].pauses === 1, 'locked-out history lists the paused player');
+await adm('POST', '/api/admin/sponsors', { name: 'Kedai A', url: 'https://example.com', kind: 'popup', image_key: 'pop.png', logo_key: 'logo.png', active: true });
+await adm('POST', '/api/admin/sponsors', { name: 'Old', url: 'https://example.com', kind: 'banner', image_key: 'b.png', active: true, end_day: '2026-01-01' });
+await adm('POST', '/api/admin/prizes', { place: '1st', name: 'Shopping voucher', value: 'RM500', sponsor: 'Kedai A', image_key: 'p.png' });
+const c = await call('GET', '/api/content');
+ok(c.popups.length === 1 && c.banners.length === 0 && c.logos.length === 1 && c.prizes.length === 1, 'content shows active sponsors and prizes only');
+a = await adm('POST', '/api/admin/pot', { day: '2026-11-26', pot_start: 500050 });
+const pot = await adm('GET', '/api/admin/pot');
+ok(pot.rows.some(r => r.day === '2026-11-26' && r.pot_start === 500100), 'admin sets a day\'s ang pow, rounded to 100');
