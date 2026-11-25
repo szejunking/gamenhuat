@@ -141,3 +141,15 @@ ok(c.popups.length === 1 && c.banners.length === 0 && c.logos.length === 1 && c.
 a = await adm('POST', '/api/admin/pot', { day: '2026-11-26', pot_start: 500050 });
 const pot = await adm('GET', '/api/admin/pot');
 ok(pot.rows.some(r => r.day === '2026-11-26' && r.pot_start === 500100), 'admin sets a day\'s ang pow, rounded to 100');
+const list = (await adm('GET', '/api/admin/players')).rows;
+const lim = list.find(r => r.email === 'lim@example.com'), tan = list.find(r => r.email === 'tan@example.com');
+a = await adm('POST', '/api/admin/player', { id: lim.id, phone: tan.phone });
+ok(a.status === 409, 'admin cannot give a player a number someone else has');
+a = await adm('POST', '/api/admin/player', { id: lim.id, phone: '0177777777' });
+ok(a.status === 200 && a.phone === '+60177777777', 'admin changes a mobile number');
+a = await adm('POST', '/api/admin/player/reset', { id: tan.id });
+ok(a.status === 200, 'admin resets a sign-in');
+clock += 61_000;
+await call('POST', '/api/signin', { email: 'tan@example.com', turnstile: 't' });
+r = await call('POST', '/api/verify', { email: 'tan@example.com', code: lastCode(), device_id: 'dddddddddddddddd' });
+ok(r.token && r.pausedUntil === 0, 'after a reset the player signs in on a new phone with no pause');
