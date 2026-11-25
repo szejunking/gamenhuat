@@ -32,6 +32,7 @@
     "TURNSTILE_SITEKEY": "0x4AAAAAAGP2hSKnavdhfwJL",
     "MAIL_FROM": "Game N Huat <noreply@test.gamenhuat.com>",
     "POT_DEFAULT": "1000000",
+    "DAILY_TRIES": "10",
     "TRIAL_START": "2027-01-16",
     "SHOWDOWN_START": "2027-02-06",
     "EVENT_END": "2027-02-20",
