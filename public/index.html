@@ -604,7 +604,7 @@ function paint(){
   const t = me.tries, later = Math.max(0, t.extraBanked - t.extra);
   let dots = '';
   for (let i = 0; i < t.extra; i++) dots += '<span class="dot saved" title="Extra try you can use today"></span>';
-  for (let i = 0; i < 3; i++) dots += `<span class="dot${i < t.daily ? '' : ' used'}" title="${i < t.daily ? "Today's try" : 'Used'}"></span>`;
+  for (let i = 0; i < (t.dailyTotal || 3); i++) dots += `<span class="dot${i < t.daily ? '' : ' used'}" title="${i < t.daily ? "Today's try" : 'Used'}"></span>`;
   if (later > 0) dots += `<span class="meta">+${later} saved for later</span>`;
   $('dots').innerHTML = dots;
   $('dots').setAttribute('aria-label', `${t.daily} of today's tries and ${t.extra} extra tries left today, ${later} saved for later`);
