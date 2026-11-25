@@ -83,7 +83,7 @@
   .card .r{font-size:clamp(38px,13vw,72px);font-weight:700;line-height:1}
   .card .s{position:absolute;font-size:clamp(20px,6vw,32px)}
   .card .s.tl{top:7px;left:9px}.card .s.br{bottom:7px;right:9px;transform:rotate(180deg)}
-  .card.back{background:repeating-linear-gradient(45deg,#c4923a 0 8px,#e0b04a 8px 16px);border:5px solid var(--card)}
+  .card.back{background:#7a1010 url('/media/mwvvew1p-beat-the-banker-lucky-cat-cardback.jpg') center/cover no-repeat;border:4px solid var(--card)}
   .card.empty{background:rgba(0,0,0,.25);box-shadow:none;border:2px dashed var(--line)}
   .card.pop{animation:pop .35s ease-out}
   @keyframes pop{from{transform:scale(.6) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
@@ -179,7 +179,8 @@
   @media (prefers-reduced-motion: reduce){ .stile{transition:none} }
   .foot a{color:var(--gold);font-weight:600;text-decoration:none}
   .heroimg{aspect-ratio:1/1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--gold);border-radius:12px;background:rgba(0,0,0,.25);color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:0 0 14px}
-  img.heroimg.cover{display:block;object-fit:cover;border:0;padding:0;background:none}
+  .herosq{position:relative;width:100%;padding-top:100%;margin:0 0 14px;border-radius:12px;overflow:hidden}
+  .herosq img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .foot .badge img{display:block;width:140px;max-width:45%;height:auto;margin:0 auto 10px}
   .foot .badge{display:block}
   .heroimg small{font-weight:400;color:var(--dim);letter-spacing:0}
@@ -250,7 +251,7 @@
 
   <section class="panel reg" id="regScreen" aria-labelledby="regTitle">
     <div id="welcome">
-      <img class="heroimg cover" src="/media/mwvr7kiq-cover-v1-0.png" alt="Beat the Banker: Game N Huat Chinese New Year card game">
+      <div class="herosq"><img src="/media/mwvr7kiq-cover-v1-0.png" alt="Beat the Banker: Game N Huat Chinese New Year card game"></div>
       <button type="button" class="go wide" id="toSignUp">Sign up</button>
       <p class="switch"><button type="button" class="linkish" id="welcomeSignIn">Sign in</button></p>
     </div>
