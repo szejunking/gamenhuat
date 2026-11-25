@@ -51,6 +51,7 @@ async function route(request, env, url, ctx) {
   if (m === 'POST' && p === '/api/verify') return verify(env, await body(request), now);
   if (m === 'GET' && p === '/api/leaderboard') return leaderboard(env, request, now);
   if (m === 'GET' && p === '/api/config') return json({ turnstileSiteKey: env.TURNSTILE_SITEKEY });
+  if (m === 'GET' && p === '/api/check' && env.SHOW_CODES === '1') return json(selfCheck(env));   // test site only
 
   const s = await session(env, request);                       // everything below needs a signed-in phone
   if (m === 'POST' && p === '/api/visit') return visit(env, s, await body(request), request, now);
@@ -111,7 +112,24 @@ async function turnstile(env, token, request) {
   if (ip) form.append('remoteip', ip);
   const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form });
   const out = await r.json();
-  if (!out.success) fail(403, 'The human check failed. Please reload the page and try again.');
+  if (!out.success) {
+    const codes = (out['error-codes'] || []).join(', ') || 'unknown';
+    console.log('Turnstile rejected:', codes, 'hostname:', out.hostname);
+    fail(403, 'The human check failed. Please reload the page and try again.' + (env.SHOW_CODES === '1' ? ` (${codes})` : ''), { codes });
+  }
+}
+
+// Says whether each setting is in place, without revealing any secret.
+function selfCheck(env) {
+  const secret = env.TURNSTILE_SECRET || '';
+  return {
+    turnstileSecretSet: secret.length > 0,
+    turnstileSecretLooksRight: /^0x4[A-Za-z0-9_-]{20,}$/.test(secret),
+    turnstileSecretIsNotTheSiteKey: secret !== env.TURNSTILE_SITEKEY,
+    turnstileSecretLength: secret.length,
+    siteKey: env.TURNSTILE_SITEKEY,
+    database: !!env.DB, email: !!env.EMAIL,
+  };
 }
 
 /* ---------------- email codes ---------------- */
