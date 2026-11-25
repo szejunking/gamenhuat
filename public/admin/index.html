@@ -88,13 +88,23 @@ async function players(q = '', offset = 0){
   $('#main').innerHTML = `<h2>Players <span class="muted">(${num(d.total)} registered)</span></h2>
     <form class="bar" id="ps"><input name="q" value="${esc(q)}" placeholder="Search name, email, phone or IP" size="32"><button class="btn primary">Search</button></form>
     <div class="wrapt"><table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Mobile</th><th>Sign-up IP</th><th>Last IP</th><th>Last seen</th>
-      <th class="num">Today</th><th class="num">Showdown total</th><th class="num">Extra tries</th><th class="num">Phones</th><th class="num">Pauses</th><th>Invited by</th><th>Joined</th></tr></thead>
+      <th class="num">Today</th><th class="num">Showdown total</th><th class="num">Extra tries</th><th class="num">Phones</th><th class="num">Pauses</th><th>Invited by</th><th>Joined</th><th></th></tr></thead>
     <tbody>${d.rows.map(r => `<tr class="${r.pauses > 1 || r.phones > 2 ? 'warn' : ''}"><td>${r.id}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td>
       <td>${esc(r.reg_ip)}</td><td>${esc(r.last_ip)}</td><td>${when(r.last_seen)}</td><td class="num">${num(r.today)}</td><td class="num">${num(r.total_score)}</td>
-      <td class="num">${r.extra_tries}</td><td class="num">${r.phones}</td><td class="num">${r.pauses}</td><td>${esc(r.invited_by)}</td><td>${when(r.created_at)}</td></tr>`).join('') || '<tr><td colspan="14" class="muted">No players found.</td></tr>'}</tbody></table></div>
+      <td class="num">${r.extra_tries}</td><td class="num">${r.phones}</td><td class="num">${r.pauses}</td><td>${esc(r.invited_by)}</td><td>${when(r.created_at)}</td>
+      <td><button class="btn" data-phone="${r.id}" data-cur="${esc(r.phone)}">Edit phone</button> <button class="btn" data-reset="${r.id}" data-name="${esc(r.name)}">Reset sign-in</button></td></tr>`).join('') || '<tr><td colspan="15" class="muted">No players found.</td></tr>'}</tbody></table></div>
     <div class="bar" style="margin-top:10px">${offset > 0 ? `<button class="btn" id="prev">Previous 100</button>` : ''}${d.rows.length === 100 ? `<button class="btn" id="next">Next 100</button>` : ''}
       <span class="muted">Rows in orange: more than one pause or more than two phones.</span></div>`;
   $('#ps').onsubmit = e => { e.preventDefault(); players(e.target.q.value.trim(), 0); };
+  document.querySelectorAll('[data-phone]').forEach(b => b.onclick = async () => {
+    const v = prompt('New mobile number (Malaysian, e.g. 0123456789):', b.dataset.cur.replace(/^\+60/, '0'));
+    if (v == null || !v.trim()) return;
+    try { await post('player', { id: Number(b.dataset.phone), phone: v.trim() }); toast('Mobile number updated'); players(q, offset); } catch(e){}
+  });
+  document.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => {
+    if (!confirm(`Reset the sign-in for ${b.dataset.name}? Their current phone is signed out and any 1-hour pause is lifted. They sign in again with an email code.`)) return;
+    try { await post('player/reset', { id: Number(b.dataset.reset) }); toast('Sign-in reset'); players(q, offset); } catch(e){}
+  });
   if ($('#prev')) $('#prev').onclick = () => players(q, offset - 100);
   if ($('#next')) $('#next').onclick = () => players(q, offset + 100);
 }
