@@ -179,6 +179,9 @@
   @media (prefers-reduced-motion: reduce){ .stile{transition:none} }
   .foot a{color:var(--gold);font-weight:600;text-decoration:none}
   .heroimg{aspect-ratio:1/1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--gold);border-radius:12px;background:rgba(0,0,0,.25);color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:0 0 14px}
+  img.heroimg.cover{display:block;object-fit:cover;border:0;padding:0;background:none}
+  .foot .badge img{display:block;width:140px;max-width:45%;height:auto;margin:0 auto 10px}
+  .foot .badge{display:block}
   .heroimg small{font-weight:400;color:var(--dim);letter-spacing:0}
   .lbpanel.locked tr.more{display:none}
   .lbmore{display:none;margin:10px 0 2px;text-align:center;font-size:13.5px;color:var(--gold)}
@@ -247,7 +250,7 @@
 
   <section class="panel reg" id="regScreen" aria-labelledby="regTitle">
     <div id="welcome">
-      <div class="heroimg" role="img" aria-label="Game image placeholder">Game image<small>1 : 1</small></div>
+      <img class="heroimg cover" src="/media/mwvr7kiq-cover-v1-0.png" alt="Beat the Banker: Game N Huat Chinese New Year card game">
       <button type="button" class="go wide" id="toSignUp">Sign up</button>
       <p class="switch"><button type="button" class="linkish" id="welcomeSignIn">Sign in</button></p>
     </div>
@@ -461,7 +464,7 @@
       </ol>
     </details>
   </section>
-  <footer class="foot">Made with lots of fun by<br>© 2026 Epnox Technologies Sdn Bhd. All rights reserved.<br><a href="https://gamenhuat.com" target="_blank" rel="noopener">Game N Huat</a></footer>
+  <footer class="foot"><a href="https://gamenhuat.com" target="_blank" rel="noopener" class="badge"><img src="/media/mwvs4lgf-retro-game-n-huat-lucky-badge.png" alt="Game N Huat"></a><br>Made with lots of fun by<br>© 2026 Epnox Technologies Sdn Bhd. All rights <span id="signOut">reserved</span>.<br><a href="https://gamenhuat.com" target="_blank" rel="noopener">Game N Huat</a></footer>
 </div>
 
 <script>
@@ -946,6 +949,15 @@ function startAnalytics(id){
   document.head.appendChild(sc);
 }
 const track = (name, params) => { if (window.gtag) gtag('event', name, params || {}); };
+
+/* ---------- hidden sign-out for testing: tap the word "reserved" in the footer ---------- */
+$('signOut').addEventListener('click', () => {
+  if (!token || !confirm('Sign out of this account on this phone?')) return;
+  token = null; store.set('gnh-token', null);
+  S.me = null; S.phase = 'idle'; S.autoAt = 0; adShownThisLoad = false;
+  $('adModal').hidden = true; clearTimeout(lockTimer);
+  showReg('signForm');
+});
 
 /* ---------- start ---------- */
 setInterval(() => { if (S.me && !document.hidden && S.phase !== 'choose' && !S.busy) reloadMe(); }, 60 * 1000);   // keep the ang pow fresh
