@@ -6,6 +6,7 @@ import worker, { _test } from '../src/index.js';
 const sql = new DatabaseSync(':memory:');
 sql.exec(readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8'));
 sql.exec(readFileSync(new URL('../migrations/0002_admin.sql', import.meta.url), 'utf8'));
+sql.exec(readFileSync(new URL('../migrations/0003_suspend.sql', import.meta.url), 'utf8'));
 globalThis.caches = { default: { match: async () => null, put: async () => {} } };
 class Stmt { constructor(q){ this.q = q; this.args = []; } bind(...a){ this.args = a; return this; }
   async first(){ return sql.prepare(this.q).get(...this.args) ?? null; }
@@ -30,8 +31,14 @@ globalThis.fetch = async u => String(u).includes('cloudflareaccess.com') ? new R
 
 let clock = Date.parse('2026-11-25T02:00:00Z'); Date.now = () => clock;
 const call = async (method, path, body, token, host = 'test.gamenhuat.com', extra = {}) => {
-  const r = await worker.fetch(new Request('https://' + host + path, { method, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...extra }, body: body ? JSON.stringify(body) : undefined }), env, { waitUntil(){} });
-  return { status: r.status, ...(await r.json()) };
+  const r = await worker.fetch(new Request('https://' + host + path, { method, headers: { 'content-type': 'application/json',
+    ...(method === 'POST' ? { Origin: 'https://' + host, 'X-Requested-With': 'gnh' } : {}),
+    ...(token ? { Cookie: '__Host-gnh_s=' + token } : {}), ...extra }, body: body ? JSON.stringify(body) : undefined }), env, { waitUntil(){} });
+  const out = { status: r.status, ...(await r.json()) };
+  const set = r.headers.get('set-cookie') || '';
+  const m = /__Host-gnh_s=([a-f0-9]*)/.exec(set);
+  if (m) { out.token = m[1]; out.cookie = set; }
+  return out;
 };
 const ok = (cond, msg) => { if (!cond) { console.error('FAIL:', msg); process.exitCode = 1; } else console.log('ok -', msg); };
 const lastCode = () => sent.at(-1).subject.match(/\d{6}/)[0];
@@ -153,3 +160,60 @@ clock += 61_000;
 await call('POST', '/api/signin', { email: 'tan@example.com', turnstile: 't' });
 r = await call('POST', '/api/verify', { email: 'tan@example.com', code: lastCode(), device_id: 'dddddddddddddddd' });
 ok(r.token && r.pausedUntil === 0, 'after a reset the player signs in on a new phone with no pause');
+// Admin page and security headers (from the penetration test report)
+const raw = async (path, host, extra = {}) => worker.fetch(new Request('https://' + host + path, { headers: extra }), env, { waitUntil(){} });
+let hres = await raw('/admin/', 'test.gamenhuat.com');
+ok(hres.status === 404, 'admin page is not served on the game address');
+hres = await raw('/admin/', 'admin.gamenhuat.com');
+ok(hres.status === 404, 'admin page is not served without an admin sign-in');
+hres = await raw('/admin/', 'admin.gamenhuat.com', { 'Cf-Access-Jwt-Assertion': await accessJwt('jk@epnox.com') });
+ok(hres.status === 200 && hres.headers.get('cache-control') === 'no-store', 'admin page is served to a signed-in admin, never cached');
+hres = await raw('/api/leaderboard', 'test.gamenhuat.com');
+ok(['strict-transport-security', 'x-frame-options', 'x-content-type-options', 'content-security-policy', 'referrer-policy', 'permissions-policy'].every(h => hres.headers.get(h)), 'security headers are on every response');
+
+// Sign-in cookie, other-website requests and server sign-out (from the security reviews)
+r = await call('POST', '/api/signin', { email: 'lim@example.com', turnstile: 't' }, null, 'test.gamenhuat.com', { Origin: 'https://evil.example' });
+ok(r.status === 403, 'requests from another website are refused');
+r = await worker.fetch(new Request('https://test.gamenhuat.com/api/deal', { method: 'POST', headers: { Origin: 'https://test.gamenhuat.com', Cookie: '__Host-gnh_s=' + tokB } }), env, { waitUntil(){} });
+ok(r.status === 403, 'requests without the page header are refused');
+clock += 61_000;
+await call('POST', '/api/signin', { email: 'lim@example.com', turnstile: 't' });
+r = await call('POST', '/api/verify', { email: 'lim@example.com', code: lastCode(), device_id: 'bbbbbbbbbbbbbbbb' });
+ok(/HttpOnly/.test(r.cookie) && /Secure/.test(r.cookie) && /SameSite=Strict/.test(r.cookie) && !('tokenInBody' in r), 'sign-in is a Secure, HttpOnly, SameSite=Strict cookie');
+const limTok = r.token;
+r = await call('POST', '/api/signout', {}, limTok);
+ok(r.status === 200 && /Max-Age=0/.test(r.cookie), 'sign-out clears the cookie');
+r = await call('GET', '/api/me', null, limTok);
+ok(r.status === 401, 'a signed-out sign-in can no longer be used');
+clock += 61_000;
+await call('POST', '/api/signin', { email: 'lim@example.com', turnstile: 't' });
+r = await call('POST', '/api/verify', { email: 'lim@example.com', code: lastCode(), device_id: 'bbbbbbbbbbbbbbbb' });
+ok(r.pausedUntil === 0, 'signing back in on the same phone after sign-out has no pause');
+clock += 61_000;
+await call('POST', '/api/signin', { email: 'lim@example.com', turnstile: 't' });
+r = await call('POST', '/api/verify', { email: 'lim@example.com', code: lastCode(), device_id: 'eeeeeeeeeeeeeeee' });
+ok(r.pausedUntil > clock, 'signing in on another phone after sign-out still pauses for 1 hour');
+
+// Admin: names, suspensions; masked leaderboard names
+ok(_test.shortName('Tan Ah Kow') === 'Tan *****' && _test.shortName('Ali') === 'Ali' && _test.shortName('Mona') === 'Mona', 'leaderboard names keep 4 characters, the rest is *****');
+const tanRow = (await adm('GET', '/api/admin/players')).rows.find(x => x.email === 'tan@example.com');
+a = await adm('POST', '/api/admin/player', { id: tanRow.id, name: 'Tan Ah Seng' });
+ok(a.status === 200 && a.name === 'Tan Ah Seng', 'admin edits a name');
+clock += 61_000;
+await call('POST', '/api/signin', { email: 'tan@example.com', turnstile: 't' });
+r = await call('POST', '/api/verify', { email: 'tan@example.com', code: lastCode(), device_id: 'dddddddddddddddd' });
+const tanTok = r.token;
+a = await adm('POST', '/api/admin/player/suspend', { id: tanRow.id, suspended: true });
+ok(a.status === 200, 'admin suspends a player');
+r = await call('GET', '/api/me', null, tanTok);
+ok(r.status === 401, 'a suspended player is signed out straight away');
+clock += 61_000;
+r = await call('POST', '/api/signin', { email: 'tan@example.com', turnstile: 't' });
+ok(r.status === 403 && r.suspended, 'a suspended player cannot sign in');
+await worker.scheduled({}, env, { waitUntil: p => p }); await new Promise(res => setTimeout(res, 10));
+const lb = await call('GET', '/api/leaderboard');
+ok(!lb.rows.some(x => x.name.startsWith('Tan ')), 'a suspended player is left off the leaderboard');
+a = await adm('POST', '/api/admin/player/suspend', { id: tanRow.id, suspended: false });
+clock += 61_000;
+r = await call('POST', '/api/signin', { email: 'tan@example.com', turnstile: 't' });
+ok(r.status === 200, 'an unsuspended player can sign in again');
