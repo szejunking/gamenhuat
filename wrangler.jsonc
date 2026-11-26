@@ -8,7 +8,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/media/*"]
+    "run_worker_first": ["/api/*", "/media/*", "/admin", "/admin/*"]
   },
 
   // Database. This is the TEST database; the live one is switched in at launch.
@@ -37,11 +37,10 @@
     "SHOWDOWN_START": "2027-02-06",
     "EVENT_END": "2027-02-20",
     "ALLOW_EARLY": "1",   // test site: lets you play before 16 Jan. Remove on the live site.
-    "SHOW_CODES": "0",    // "1" shows the code on screen instead of emailing it (only for testing without email)
     "GA_ID": "",          // Google Analytics Measurement ID, for example "G-ABC123XYZ". Empty = off.
     "ADMIN_EMAILS": "jk@epnox.com",   // who may use the admin panel (comma-separated)
     "ACCESS_TEAM": "epnox",
-    "ACCESS_AUD": "8bb32c8d9ccc8b8bf238ddc9c687c60722ee685651f4133f211554659c7f1f5b"    
+    "ACCESS_AUD": "8bb32c8d9ccc8b8bf238ddc9c687c60722ee685651f4133f211554659c7f1f5b"
   },
 
   "observability": { "enabled": true }
