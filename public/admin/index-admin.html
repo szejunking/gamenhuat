@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin · Beat the Banker</title>
+<style>
+  :root{--bg:#f6f4f1;--ink:#1f1a17;--dim:#6b625c;--line:#ddd5cc;--red:#9b1c1c;--gold:#b8860b;--ok:#1d7a3a}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--red);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0}
+  header small{opacity:.85}
+  nav{display:flex;gap:4px;flex-wrap:wrap;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+  nav button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}
+  nav button[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  main{padding:16px 18px 60px;max-width:1200px;margin:0 auto}
+  h2{font-size:17px;margin:4px 0 12px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input,select,button.btn{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  button.btn{cursor:pointer}
+  button.primary{background:var(--red);color:#fff;border-color:var(--red)}
+  button.danger{color:var(--red)}
+  .wrapt{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+  th{background:#faf8f5;font-weight:600;position:sticky;top:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.warn td{background:#fff4e5}
+  .muted{color:var(--dim)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim)}
+  label.f input,label.f select{color:var(--ink)}
+  .thumb{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#eee;display:block}
+  .thumb.wide{width:120px;height:40px}
+  .media{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .media figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12.5px}
+  .media img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#f0ece7;border-radius:6px}
+  .media figcaption{word-break:break-all;margin:6px 0}
+  #msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;display:none;z-index:5}
+  .err{color:var(--red)}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:#eee}
+  .pill.on{background:#e3f3e8;color:var(--ok)} .pill.off{background:#f6e3e3;color:var(--red)}
+</style>
+</head>
+<body>
+<header><h1>🧧 Beat the Banker · Admin</h1><small id="who">Checking sign-in…</small></header>
+<nav role="tablist" id="tabs">
+  <button role="tab" data-tab="players" aria-selected="true">Players</button>
+  <button role="tab" data-tab="leaderboard">Leaderboard</button>
+  <button role="tab" data-tab="lockouts">Locked out</button>
+  <button role="tab" data-tab="sponsors">Sponsors</button>
+  <button role="tab" data-tab="prizes">Prizes</button>
+  <button role="tab" data-tab="media">Media</button>
+  <button role="tab" data-tab="pot">Ang pow</button>
+</nav>
+<main id="main"></main>
+<div id="msg" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const when = ms => ms ? new Date(ms).toLocaleString('en-MY', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }) : '';
+const num = n => Number(n || 0).toLocaleString('en-US');
+function toast(t, bad){ const m = $('#msg'); m.textContent = t; m.style.background = bad ? '#9b1c1c' : '#1f1a17'; m.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => m.style.display = 'none', 3000); }
+
+async function api(path, opts = {}){
+  opts.headers = Object.assign({ 'X-Requested-With': 'gnh' }, opts.headers || {});
+  const r = await fetch('/api/admin/' + path, opts);
+  let out = {}; try { out = await r.json(); } catch(e){}
+  if (!r.ok){ toast(out.error || ('Error ' + r.status), true); throw new Error(out.error || r.status); }
+  return out;
+}
+const post = (path, data) => api(path, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(data) });
+
+let MEDIA = [];
+async function loadMedia(){ try { MEDIA = (await api('media')).rows; } catch(e){ MEDIA = []; } }
+function mediaSelect(name, value){
+  return `<select name="${name}"><option value="">(none)</option>${MEDIA.map(m => `<option value="${esc(m.key)}"${m.key === value ? ' selected' : ''}>${esc(m.name)}</option>`).join('')}</select>`;
+}
+const thumb = (key, wide) => key ? `<img class="thumb${wide ? ' wide' : ''}" src="/media/${encodeURIComponent(key)}" alt="">` : '<span class="muted">none</span>';
+
+/* ---------- Players ---------- */
+async function players(q = '', offset = 0){
+  const d = await api(`players?q=${encodeURIComponent(q)}&offset=${offset}`);
+  $('#main').innerHTML = `<h2>Players <span class="muted">(${num(d.total)} registered)</span></h2>
+    <form class="bar" id="ps"><input name="q" value="${esc(q)}" placeholder="Search name, email, phone or IP" size="32"><button class="btn primary">Search</button></form>
+    <div class="wrapt"><table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Mobile</th><th>Sign-up IP</th><th>Last IP</th><th>Last seen</th>
+      <th class="num">Today</th><th class="num">Showdown total</th><th class="num">Extra tries</th><th class="num">Phones</th><th class="num">Pauses</th><th>Invited by</th><th>Joined</th><th></th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr class="${r.pauses > 1 || r.phones > 2 ? 'warn' : ''}"><td>${r.id}</td><td>${esc(r.name)}${r.suspended ? ' <span class="pill off">Suspended</span>' : ''}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td>
+      <td>${esc(r.reg_ip)}</td><td>${esc(r.last_ip)}</td><td>${when(r.last_seen)}</td><td class="num">${num(r.today)}</td><td class="num">${num(r.total_score)}</td>
+      <td class="num">${r.extra_tries}</td><td class="num">${r.phones}</td><td class="num">${r.pauses}</td><td>${esc(r.invited_by)}</td><td>${when(r.created_at)}</td>
+      <td><button class="btn" data-ename="${r.id}" data-cur="${esc(r.name)}">Edit name</button> <button class="btn" data-phone="${r.id}" data-cur="${esc(r.phone)}">Edit phone</button>
+        <button class="btn" data-reset="${r.id}" data-name="${esc(r.name)}">Reset sign-in</button>
+        <button class="btn danger" data-susp="${r.id}" data-on="${r.suspended ? 0 : 1}" data-name="${esc(r.name)}">${r.suspended ? 'Unsuspend' : 'Suspend'}</button></td></tr>`).join('') || '<tr><td colspan="15" class="muted">No players found.</td></tr>'}</tbody></table></div>
+    <div class="bar" style="margin-top:10px">${offset > 0 ? `<button class="btn" id="prev">Previous 100</button>` : ''}${d.rows.length === 100 ? `<button class="btn" id="next">Next 100</button>` : ''}
+      <span class="muted">Rows in orange: more than one pause or more than two phones.</span></div>`;
+  $('#ps').onsubmit = e => { e.preventDefault(); players(e.target.q.value.trim(), 0); };
+  document.querySelectorAll('[data-phone]').forEach(b => b.onclick = async () => {
+    const v = prompt('New mobile number (Malaysian, e.g. 0123456789):', b.dataset.cur.replace(/^\+60/, '0'));
+    if (v == null || !v.trim()) return;
+    try { await post('player', { id: Number(b.dataset.phone), phone: v.trim() }); toast('Mobile number updated'); players(q, offset); } catch(e){}
+  });
+  document.querySelectorAll('[data-ename]').forEach(b => b.onclick = async () => {
+    const v = prompt('New name:', b.dataset.cur);
+    if (v == null || !v.trim()) return;
+    try { await post('player', { id: Number(b.dataset.ename), name: v.trim() }); toast('Name updated'); players(q, offset); } catch(e){}
+  });
+  document.querySelectorAll('[data-susp]').forEach(b => b.onclick = async () => {
+    const on = b.dataset.on === '1';
+    if (!confirm(on ? `Suspend ${b.dataset.name}? They are signed out straight away, cannot sign in or play, and are removed from the leaderboard at its next refresh.`
+                    : `Unsuspend ${b.dataset.name}? They can sign in and play again.`)) return;
+    try { await post('player/suspend', { id: Number(b.dataset.susp), suspended: on }); toast(on ? 'Player suspended' : 'Player unsuspended'); players(q, offset); } catch(e){}
+  });
+  document.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => {
+    if (!confirm(`Reset the sign-in for ${b.dataset.name}? Their current phone is signed out and any 1-hour pause is lifted. They sign in again with an email code.`)) return;
+    try { await post('player/reset', { id: Number(b.dataset.reset) }); toast('Sign-in reset'); players(q, offset); } catch(e){}
+  });
+  if ($('#prev')) $('#prev').onclick = () => players(q, offset - 100);
+  if ($('#next')) $('#next').onclick = () => players(q, offset + 100);
+}
+
+/* ---------- Leaderboard ---------- */
+async function leaderboard(board = 'daily', day = ''){
+  const d = await api(`leaderboard?board=${board}&day=${encodeURIComponent(day)}`);
+  $('#main').innerHTML = `<h2>Leaderboard</h2>
+    <form class="bar" id="lf"><select name="board"><option value="daily"${d.board === 'daily' ? ' selected' : ''}>Daily (trial run)</option><option value="showdown"${d.board === 'showdown' ? ' selected' : ''}>Showdown total</option></select>
+      <input type="date" name="day" value="${esc(d.day)}"><button class="btn primary">Show</button><span class="muted">Live, top 100. Players see a copy refreshed every 5 minutes.</span></form>
+    <div class="wrapt"><table><thead><tr><th class="num">Place</th><th>Name</th><th>Email</th><th>Mobile</th><th class="num">Score</th></tr></thead>
+    <tbody>${d.rows.map((r, i) => `<tr><td class="num">${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td class="num">${num(r.score)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No scores yet.</td></tr>'}</tbody></table></div>`;
+  $('#lf').onsubmit = e => { e.preventDefault(); leaderboard(e.target.board.value, e.target.day.value); };
+}
+
+/* ---------- Locked-out history ---------- */
+async function lockouts(){
+  const d = await api('lockouts');
+  $('#main').innerHTML = `<h2>Locked-out history</h2><p class="muted">Players paused for signing in on another phone, most recent first. Repeat names are worth watching.</p>
+    <div class="wrapt"><table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Mobile</th><th>Last IP</th><th class="num">Pauses</th><th class="num">Phones used</th><th>Last pause</th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr class="${r.pauses > 1 ? 'warn' : ''}"><td>${r.id}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td>${esc(r.last_ip)}</td>
+      <td class="num">${r.pauses}</td><td class="num">${r.phones}</td><td>${when(r.last_at)}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">Nobody has been locked out.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ---------- Sponsors ---------- */
+async function sponsors(edit){
+  await loadMedia();
+  const d = await api('sponsors'), s = edit || { kind:'banner', active: 1, sort: 0 };
+  $('#main').innerHTML = `<h2>Sponsors</h2>
+    <form class="card" id="sf"><b>${s.id ? 'Edit sponsor' : 'Add a sponsor'}</b>
+      <p class="muted">Banner pictures: 1200 × 400. Pop-up pictures: portrait, e.g. 1080 × 1620. Logos: square, e.g. 600 × 600. Upload them under Media first.</p>
+      <input type="hidden" name="id" value="${s.id || ''}">
+      <div class="grid">
+        <label class="f">Name<input name="name" value="${esc(s.name)}" required></label>
+        <label class="f">Link (https://…)<input name="url" value="${esc(s.url)}" placeholder="https://"></label>
+        <label class="f">Type<select name="kind"><option value="banner"${s.kind === 'banner' ? ' selected' : ''}>Banner</option><option value="popup"${s.kind === 'popup' ? ' selected' : ''}>Pop-up</option></select></label>
+        <label class="f">Picture (banner or pop-up)${mediaSelect('image_key', s.image_key)}</label>
+        <label class="f">Square logo (sponsor carousel)${mediaSelect('logo_key', s.logo_key)}</label>
+        <label class="f">Show from (optional)<input type="date" name="start_day" value="${esc(s.start_day)}"></label>
+        <label class="f">Show until (optional)<input type="date" name="end_day" value="${esc(s.end_day)}"></label>
+        <label class="f">Order<input type="number" name="sort" value="${s.sort || 0}"></label>
+        <label class="f">Status<select name="active"><option value="1"${s.active ? ' selected' : ''}>Active</option><option value="0"${!s.active ? ' selected' : ''}>Off</option></select></label>
+      </div>
+      <div class="bar" style="margin:12px 0 0"><button class="btn primary">${s.id ? 'Save changes' : 'Add sponsor'}</button>${s.id ? '<button type="button" class="btn" id="cancel">Cancel</button>' : ''}</div>
+    </form>
+    <p class="muted">Active sponsors of each type take turns at random. Changes show in the game within a minute.</p>
+    <div class="wrapt"><table><thead><tr><th>Type</th><th>Picture</th><th>Logo</th><th>Name</th><th>Link</th><th>Dates</th><th>Status</th><th></th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr><td>${r.kind === 'popup' ? 'Pop-up' : 'Banner'}</td><td>${thumb(r.image_key, r.kind === 'banner')}</td><td>${thumb(r.logo_key)}</td><td>${esc(r.name)}</td>
+      <td>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a>` : ''}</td><td>${esc(r.start_day || '…')} – ${esc(r.end_day || '…')}</td>
+      <td><span class="pill ${r.active ? 'on' : 'off'}">${r.active ? 'Active' : 'Off'}</span></td>
+      <td><button class="btn" data-edit="${r.id}">Edit</button> <button class="btn danger" data-del="${r.id}">Delete</button></td></tr>`).join('') || '<tr><td colspan="8" class="muted">No sponsors yet.</td></tr>'}</tbody></table></div>`;
+  $('#sf').onsubmit = async e => {
+    e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); f.active = f.active === '1';
+    await post('sponsors', f); toast('Saved'); sponsors();
+  };
+  if ($('#cancel')) $('#cancel').onclick = () => sponsors();
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => sponsors(d.rows.find(r => r.id == b.dataset.edit)));
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('Delete this sponsor?')) return; await api('sponsors?id=' + b.dataset.del, { method:'DELETE' }); toast('Deleted'); sponsors(); });
+}
+
+/* ---------- Prizes ---------- */
+async function prizes(edit){
+  await loadMedia();
+  const d = await api('prizes'), s = edit || { sort: (d.rows.length + 1) * 10 };
+  $('#main').innerHTML = `<h2>Prizes</h2>
+    <form class="card" id="pf"><b>${s.id ? 'Edit prize' : 'Add a prize'}</b>
+      <p class="muted">Prize pictures are square, e.g. 600 × 600. Upload them under Media first.</p>
+      <input type="hidden" name="id" value="${s.id || ''}">
+      <div class="grid">
+        <label class="f">Place (e.g. 1st, 5th–10th)<input name="place" value="${esc(s.place)}" required></label>
+        <label class="f">Prize name<input name="name" value="${esc(s.name)}" required></label>
+        <label class="f">Value (e.g. RM500)<input name="value" value="${esc(s.value)}"></label>
+        <label class="f">Sponsor<input name="sponsor" value="${esc(s.sponsor)}"></label>
+        <label class="f">Square picture${mediaSelect('image_key', s.image_key)}</label>
+        <label class="f">Order (lower shows first)<input type="number" name="sort" value="${s.sort || 0}"></label>
+      </div>
+      <div class="bar" style="margin:12px 0 0"><button class="btn primary">${s.id ? 'Save changes' : 'Add prize'}</button>${s.id ? '<button type="button" class="btn" id="cancel">Cancel</button>' : ''}</div>
+    </form>
+    <div class="wrapt"><table><thead><tr><th>Picture</th><th>Place</th><th>Prize</th><th>Value</th><th>Sponsor</th><th class="num">Order</th><th></th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr><td>${thumb(r.image_key)}</td><td>${esc(r.place)}</td><td>${esc(r.name)}</td><td>${esc(r.value)}</td><td>${esc(r.sponsor)}</td><td class="num">${r.sort}</td>
+      <td><button class="btn" data-edit="${r.id}">Edit</button> <button class="btn danger" data-del="${r.id}">Delete</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">No prizes yet. The game shows sample prizes until you add some.</td></tr>'}</tbody></table></div>`;
+  $('#pf').onsubmit = async e => { e.preventDefault(); await post('prizes', Object.fromEntries(new FormData(e.target))); toast('Saved'); prizes(); };
+  if ($('#cancel')) $('#cancel').onclick = () => prizes();
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => prizes(d.rows.find(r => r.id == b.dataset.edit)));
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('Delete this prize?')) return; await api('prizes?id=' + b.dataset.del, { method:'DELETE' }); toast('Deleted'); prizes(); });
+}
+
+/* ---------- Media ---------- */
+async function media(){
+  await loadMedia();
+  $('#main').innerHTML = `<h2>Media</h2>
+    <div class="card"><label class="f">Upload pictures (PNG, JPG, WebP or GIF, up to 5 MB each)<input type="file" id="up" accept="image/png,image/jpeg,image/webp,image/gif" multiple></label><p class="muted" id="upnote"></p></div>
+    <div class="media">${MEDIA.map(m => `<figure><img src="${esc(m.url)}" alt="" loading="lazy"><figcaption>${esc(m.name)}<br><span class="muted">${Math.round(m.size / 1024)} KB · ${when(m.uploaded_at)}</span></figcaption>
+      <button class="btn danger" data-del="${esc(m.key)}">Delete</button></figure>`).join('') || '<p class="muted">No pictures yet.</p>'}</div>`;
+  $('#up').onchange = async e => {
+    const files = Array.from(e.target.files);
+    for (const [i, f] of files.entries()){
+      $('#upnote').textContent = `Uploading ${i + 1} of ${files.length}: ${f.name}…`;
+      try { await api('media?name=' + encodeURIComponent(f.name), { method:'POST', headers:{ 'content-type': f.type }, body: f }); } catch(err){}
+    }
+    toast('Upload finished'); media();
+  };
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('Delete this picture? Sponsors or prizes using it will show nothing.')) return; await api('media?key=' + encodeURIComponent(b.dataset.del), { method:'DELETE' }); toast('Deleted'); media(); });
+}
+
+/* ---------- Ang pow ---------- */
+async function pot(){
+  const d = await api('pot');
+  const tomorrow = new Date(Date.parse(d.today + 'T00:00:00+08:00') + 86400000).toISOString().slice(0, 10);
+  $('#main').innerHTML = `<h2>Banker's ang pow</h2>
+    <div class="card"><p>${num(d.players)} registered players · ${num(d.activeYesterday)} played yesterday. Suggested ang pow: <b>${num(d.suggested)}</b> (about 15 points per registered player). Days you don't set use ${num(d.defaultPot)}.</p>
+      <form class="bar" id="potf"><input type="date" name="day" value="${tomorrow}"><input type="number" name="pot_start" step="100" min="0" value="${d.suggested}"><button class="btn primary">Set ang pow</button></form>
+      <p class="muted">Changing today's amount takes effect straight away. Points already won or lost today still count.</p></div>
+    <div class="wrapt"><table><thead><tr><th>Day</th><th class="num">Ang pow</th><th class="num">Won by players (net)</th><th class="num">Left</th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr><td>${esc(r.day)}${r.day === d.today ? ' <span class="pill on">today</span>' : ''}</td><td class="num">${num(r.pot_start)}</td><td class="num">${num(r.pot_paid)}</td><td class="num">${num(Math.max(0, r.pot_start - r.pot_paid))}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No days yet.</td></tr>'}</tbody></table></div>`;
+  $('#potf').onsubmit = async e => { e.preventDefault(); await post('pot', Object.fromEntries(new FormData(e.target))); toast('Saved'); pot(); };
+}
+
+const TABS = { players: () => players(), leaderboard: () => leaderboard(), lockouts, sponsors: () => sponsors(), prizes: () => prizes(), media, pot };
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  TABS[b.dataset.tab]().catch(() => {});
+});
+api('me').then(m => { $('#who').textContent = 'Signed in as ' + m.email + ' · ' + m.day; players().catch(() => {}); })
+  .catch(e => { $('#who').textContent = ''; $('#main').innerHTML = `<p class="err">${esc(e.message)}</p><p>Open this page at admin.gamenhuat.com and sign in with an admin email.</p>`; });
+</script>
+</body>
+</html>
