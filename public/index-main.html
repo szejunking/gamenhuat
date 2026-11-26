@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#8e1616">
+<title>Beat the Banker · Game N Huat</title>
+<style>
+  :root{--felt:#8e1616;--felt2:#4d0b0b;--line:#c4923a;--ink:#fff3dc;--dim:#f1c9a4;--gold:#f2c14e;--red:#ffb3a6;--win:#ffe08a;--lose:#ffb3a6;--jade:#8fe0bd;--card:#fffaf0}
+  *{box-sizing:border-box}
+  html{background:#4d0b0b;min-height:100%}
+  body{margin:0;background:radial-gradient(ellipse at 50% 0,#b32222 0,var(--felt) 45%,var(--felt2) 100%) fixed;color:var(--ink);
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;min-height:100dvh}
+  .wrap{max-width:560px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 14px calc(40px + env(safe-area-inset-bottom));position:relative;z-index:1}
+  .goat{position:fixed;right:-24px;bottom:-6px;width:min(78vw,480px);height:auto;opacity:.16;pointer-events:none;z-index:0}
+  .ad{flex:0 0 100%;order:0;aspect-ratio:32/10;max-height:160px;display:flex;align-items:center;justify-content:center;border:2px dashed var(--gold);border-radius:10px;background:rgba(0,0,0,.25);color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;font-size:14px}
+  .watermark{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.09;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27260%27%20height%3D%27200%27%3E%3Ctext%20x%3D%27130%27%20y%3D%27100%27%20text-anchor%3D%27middle%27%20dominant-baseline%3D%27middle%27%20transform%3D%27rotate%28-30%20130%20100%29%27%20font-family%3D%27Arial%2C%20sans-serif%27%20font-size%3D%2726%27%20font-weight%3D%27700%27%20letter-spacing%3D%273%27%20fill%3D%27%23ffffff%27%3EDEMO%20VERSION%3C/text%3E%3C/svg%3E");background-repeat:repeat}
+  .demo-tag{position:fixed;top:10px;right:-34px;z-index:51;pointer-events:none;transform:rotate(45deg);background:var(--gold);color:#2a1508;font:700 11px/1 system-ui,sans-serif;letter-spacing:1.5px;padding:6px 40px;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  .countdown{display:grid;gap:6px;margin:-4px auto 12px;max-width:320px;font-size:14px;color:var(--ink)}
+  .countdown b{color:var(--gold);font-variant-numeric:tabular-nums}
+  .cdtrack{display:block;height:8px;border-radius:5px;background:rgba(0,0,0,.35);overflow:hidden}
+  .cdtrack i{display:block;height:100%;width:100%;background:var(--gold);border-radius:5px}
+  .countdown.urgent .cdtrack i{background:#fff3dc}
+  .countdown.urgent b{color:#fff}
+  .admodal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:0;background:rgba(20,4,4,.85)}
+  .admodal[hidden]{display:none}
+  .adbox{position:relative;width:min(100%,560px);box-sizing:border-box;padding:12px 10px 6px !important;background:linear-gradient(#8e1616,#5a0d0d);border:1px solid var(--gold);border-radius:16px;padding:16px 16px 6px;box-shadow:0 18px 50px rgba(0,0,0,.6);animation:adin .25s ease-out}
+  @keyframes adin{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+  @media(prefers-reduced-motion:reduce){.adbox{animation:none}}
+  .adkicker{margin:0 36px 10px 0;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .adart{aspect-ratio:2/3;max-height:58vh;margin:0 auto 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--gold);border-radius:12px;background:rgba(0,0,0,.25);color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:15px;text-align:center}
+  .adart.has-img{aspect-ratio:auto;max-height:none;border:0;padding:0;background:none}
+  .adart img{display:block;width:100%;height:auto;max-height:78vh;object-fit:contain;border-radius:10px}
+  a.ad.has-img{border:0;padding:0;background:none;aspect-ratio:auto;max-height:none}
+  a.ad img{display:block;width:100%;height:auto;border-radius:10px}
+  .pbox img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;display:block}
+  .pslide .pbox.has-img{padding:0;border:0;background:none;gap:4px}
+  .stile img{width:72%;aspect-ratio:1/1;object-fit:contain;border-radius:8px}
+  .adart small{font-weight:500;letter-spacing:0;text-transform:none;color:var(--dim);font-size:12.5px}
+  .adx{position:absolute;top:8px;right:8px;width:36px;height:36px;min-width:0;padding:0;border-radius:50%;font-size:22px;line-height:1;color:var(--ink);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25)}
+  .debug{position:fixed;left:14px;bottom:14px;z-index:55;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+  .dbbtn{min-width:0;padding:10px 14px;border-radius:999px;font:700 13px/1 system-ui,sans-serif;letter-spacing:.5px;color:#fff3dc;background:#1f2a44;border:1px solid #7f93c4;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+  .dbbtn:hover:not(:disabled){background:#2b3a5e}
+  .dbbtn[aria-expanded="true"]{background:#2b3a5e}
+  .dbmenu{width:250px;background:#141b2e;border:1px solid #7f93c4;border-radius:12px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+  .dbmenu[hidden]{display:none}
+  .dbhead{margin:0 0 8px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#9fb0d8}
+  .dbmenu button + button{margin-top:6px}
+  .dbmenu button{display:block;width:100%;min-width:0;text-align:left;padding:10px 12px;font-size:14px;color:#fff3dc;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px}
+  .dbmenu button:hover{background:rgba(255,255,255,.14)}
+  .dbnote{margin:8px 2px 0;font-size:12.5px;color:#9fb0d8;min-height:0}
+  .dbnote:empty{display:none}
+  .advisit{display:block;box-sizing:border-box;text-align:center;text-decoration:none;font-weight:700;color:#2a1508;background:var(--gold);border:1px solid var(--gold);border-radius:10px;padding:12px 18px}
+  .advisit:hover{background:#f6d27a}
+  .advisit:focus-visible{outline:2px solid #fff3dc;outline-offset:2px}
+  .adclose{display:block;width:100%;margin:0 0 10px}
+  .lock{text-align:center}
+  .lock p{margin:0 0 12px}
+  .lockclock{text-align:center;margin:6px 0 14px;font-size:15px}
+  .lockclock span{display:block;margin-top:4px;font:700 32px/1.1 Georgia,serif;color:var(--gold);font-variant-numeric:tabular-nums}
+  header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  h1{font:600 22px/1.1 Georgia,"Times New Roman",serif;margin:0}
+  h1 span{color:var(--gold)}
+  .meta{color:var(--dim);font-size:13.5px}
+  .meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .panel{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+  .panel h2{margin:0 0 8px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .potrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .pot{font:700 28px Georgia,serif;font-variant-numeric:tabular-nums}
+  .bar{height:12px;background:rgba(0,0,0,.4);border-radius:7px;overflow:hidden;margin:8px 0 6px}
+  .bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#c9a23a,var(--gold));border-radius:7px;transition:width .6s linear}
+  .bar.low i{background:linear-gradient(90deg,#fff3dc,#ffd9c2)}
+  .sub{display:flex;justify-content:space-between;color:var(--dim);font-size:13px}
+  .table{text-align:center}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 12px}
+  .slot{display:flex;flex-direction:column;align-items:stretch;gap:7px;min-width:0}
+  .slot .val{text-align:center}
+  .val{min-height:24px;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums;line-height:1.3}
+  .val b{color:var(--ink);font-size:15px}
+  .val.ace{color:#2a1508;background:var(--gold);border-radius:12px;padding:2px 6px;font-weight:600;font-size:12px;align-self:center}
+  .val.ace b{color:#2a1508}
+  .card{width:100%;aspect-ratio:92/130;height:auto;border-radius:10px;background:var(--card);color:#1c1c1c;position:relative;box-shadow:0 6px 16px rgba(0,0,0,.45);
+    font-family:Georgia,"Times New Roman",serif;display:flex;align-items:center;justify-content:center}
+  .card.red{color:#c22a22}
+  .card .r{font-size:clamp(38px,13vw,72px);font-weight:700;line-height:1}
+  .card .s{position:absolute;font-size:clamp(20px,6vw,32px)}
+  .card .s.tl{top:7px;left:9px}.card .s.br{bottom:7px;right:9px;transform:rotate(180deg)}
+  .card.back{background:#7a1010 url('/media/mwvvew1p-beat-the-banker-lucky-cat-cardback.jpg') center/cover no-repeat;border:4px solid var(--card)}
+  .card.empty{background:rgba(0,0,0,.25);box-shadow:none;border:2px dashed var(--line)}
+  .card.flip{animation:flip .42s ease-in-out}
+  @keyframes flip{0%{transform:perspective(600px) rotateY(0)}50%{transform:perspective(600px) rotateY(90deg)}100%{transform:perspective(600px) rotateY(0)}}
+  .card.deal{animation:dealin .45s ease-out both}
+  @keyframes dealin{from{transform:translateY(-30px) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+  .card.wiggle{animation:wiggle .6s ease-in-out}
+  @keyframes wiggle{0%,100%{transform:none}20%{transform:rotate(-4deg)}40%{transform:rotate(4deg) translateY(-4px)}60%{transform:rotate(-2deg)}80%{transform:rotate(2deg)}}
+  .card.pop{animation:pop .35s ease-out}
+  @keyframes pop{from{transform:scale(.6) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+  @media(prefers-reduced-motion:reduce){.card.pop,.card.flip,.card.deal,.card.wiggle{animation:none}.bar i{transition:none}}
+
+  .cond{display:grid;gap:6px;text-align:left;font-size:14.5px;margin:0 auto 4px;max-width:420px}
+  .cond div{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:baseline;padding:6px 10px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(0,0,0,.18)}
+  .cond b{font-family:Georgia,serif;font-size:16px}
+  .cond div.hit{border-color:var(--gold);background:rgba(242,193,78,.18)}
+  .banner{font:600 19px Georgia,serif;min-height:54px;margin:6px 0 10px;display:flex;align-items:center;justify-content:center;text-wrap:balance}
+  .banner.win{color:var(--win)}.banner.lose{color:var(--lose)}.banner.gold{color:var(--gold)}
+  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  button{font:inherit;color:var(--ink);background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:10px;padding:12px 18px;cursor:pointer;min-width:120px}
+  button:hover:not(:disabled){background:rgba(255,255,255,.16)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  button.go{background:var(--gold);border-color:var(--gold);color:#2a1f00;font-weight:700}
+  button.go:hover:not(:disabled){background:#f0c95c}
+  button.small{min-width:0;padding:8px 12px;font-size:14px}
+  [hidden]{display:none!important}
+  .me{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;align-items:center}
+  .me small{display:block;color:var(--dim);font-size:12.5px}
+  .me b{font:700 22px Georgia,serif;font-variant-numeric:tabular-nums}
+  .who{position:absolute;top:calc(6px + env(safe-area-inset-top));right:14px;font-size:12px;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+  header{padding-top:10px}
+  .linkish{background:none;border:0;padding:0;min-width:0;color:var(--gold);text-decoration:underline;font:inherit;cursor:pointer}
+  .linkish:hover:not(:disabled){background:none}
+  .reg h2{font-size:13px}
+  .reg p{margin:0 0 12px}
+  .field{display:grid;gap:5px;font-size:14px;color:var(--dim);margin-bottom:16px}
+  .field input{font:inherit;font-size:17px;color:#2a1508;background:var(--card);border:2px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+  .field input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .prefixed{display:flex;align-items:stretch}
+  .prefix{display:flex;align-items:center;padding:0 12px;font-size:17px;font-weight:600;color:#2a1508;background:#f3e2bf;border:2px solid var(--line);border-right:0;border-radius:10px 0 0 10px}
+  .prefixed input{border-radius:0 10px 10px 0;min-width:0}
+  .hint{font-size:13px;color:var(--dim)}
+  .why{border:1px solid var(--gold);background:rgba(242,193,78,.16);border-radius:10px;padding:10px 12px;margin:4px 0 14px;font-size:14px}
+  .why b{display:block;color:var(--gold);margin-bottom:3px}
+  .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-bottom:10px;cursor:pointer}
+  .check input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--gold)}
+  .err{color:#fff;background:rgba(0,0,0,.35);border-left:4px solid var(--gold);border-radius:6px;padding:0 10px;font-size:14px;min-height:0}
+  .err:empty{display:none}
+  .err:not(:empty){padding:8px 10px}
+  button.wide{width:100%;margin:4px 0 10px}
+  .switch{text-align:center;font-size:14px}
+  .proto{border-top:1px solid rgba(255,255,255,.15);padding-top:10px;margin-top:6px!important}
+  .teaser{background:rgba(242,193,78,.16);border-radius:8px;padding:8px 10px;font-size:14px}
+  .req,.opt{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.3px;padding:1px 6px;border-radius:5px;white-space:nowrap}
+  .req{background:var(--gold);color:#2a1508}
+  .opt{border:1px solid var(--dim);color:var(--dim)}
+  .prizespanel{padding:6px 16px}
+  table.prizes td small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+  .info details.solo{margin-top:0;border:0;background:none}
+  .info details.solo > summary{padding:11px 0;font-size:16px}
+  .info details.solo > .note, .info details.solo > table{margin-left:0;margin-right:0}
+  .info details.solo > table{width:100%}
+  .info details{border:1px solid rgba(255,255,255,.18);border-radius:10px;margin-top:8px;background:rgba(0,0,0,.15)}
+  .info summary{cursor:pointer;padding:11px 14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  .info summary::-webkit-details-marker{display:none}
+  .info summary::after{content:'▾';color:var(--gold);transition:transform .2s}
+  .info details[open] summary::after{transform:rotate(180deg)}
+  .info details[open] summary{border-bottom:1px solid rgba(255,255,255,.12)}
+  .info summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .info details > .note, .info details > ol, .info details > table{margin:10px 14px 12px}
+  .info ol.note li{margin-bottom:6px}
+  .draftnote{font-size:12.5px;color:var(--dim);margin:0 0 4px}
+  table.prizes{border-collapse:collapse;width:calc(100% - 28px);font-size:13.5px;font-variant-numeric:tabular-nums}
+  table.prizes th,table.prizes td{text-align:left;padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.1)}
+  table.prizes th{color:var(--gold);font-weight:600;font-size:12.5px}
+  table.prizes td:first-child{width:3.5em;white-space:nowrap;color:var(--gold);font-weight:600}
+  table.prizes tfoot td{font-weight:700;border-bottom:0}
+  .lbpanel h2{margin:4px 0 2px;font-size:16px}
+  .lbpanel .note{margin:0 0 8px;font-size:12.5px;color:var(--dim)}
+  table.lb{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+  table.lb th,table.lb td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.1);text-align:left}
+  table.lb th{color:var(--gold);font-weight:600;font-size:12.5px}
+  table.lb td:first-child,table.lb th:first-child{width:3.2em;text-align:right;padding-right:10px}
+  table.lb td:last-child,table.lb th:last-child{text-align:right}
+  table.lb tr.prize td{background:rgba(242,193,78,.12)}
+  table.lb tr.prize td:first-child{color:var(--gold);font-weight:700}
+  .ad.ad2{margin:14px 0}
+  a.ad,a.adart{text-decoration:none}
+  a.ad:focus-visible,a.adart:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .sponsors h2{margin:4px 0 8px;font-size:16px}
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stile{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--gold);border-radius:10px;background:rgba(0,0,0,.25);color:var(--gold);text-decoration:none;font-weight:600;text-align:center;padding:8px;transition:opacity .35s}
+  .stile .logo{font-size:34px;line-height:1}
+  .stile small{font-weight:400;font-size:12px;color:var(--dim)}
+  .stile.fade{opacity:0}
+  .stile:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .becomesp{margin:12px 0 2px;text-align:center}
+  .becomesp a{color:var(--gold);font-weight:600}
+  .sponsors .note{margin:8px 0 0;font-size:12.5px;color:var(--dim)}
+  @media (prefers-reduced-motion: reduce){ .stile{transition:none} }
+  .foot a{color:var(--gold);font-weight:600;text-decoration:none}
+  .heroimg{aspect-ratio:1/1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--gold);border-radius:12px;background:rgba(0,0,0,.25);color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:0 0 14px}
+  .herosq{position:relative;width:100%;padding-top:100%;margin:0 0 14px;border-radius:12px;overflow:hidden}
+  .herosq img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .foot .badge img{display:block;width:140px;max-width:45%;height:auto;margin:0 auto 10px}
+  .foot .badge{display:block}
+  .heroimg small{font-weight:400;color:var(--dim);letter-spacing:0}
+  .lbpanel.locked tr.more{display:none}
+  .lbmore{display:none;margin:10px 0 2px;text-align:center;font-size:13.5px;color:var(--gold)}
+  .lbpanel.locked .lbmore{display:block}
+  .pcar{padding:12px}
+  .pview{overflow:hidden;margin:0 -5px}
+  .ptrack{display:flex;transition:transform .5s ease}
+  .pslide{flex:0 0 50%;padding:0 5px;box-sizing:border-box}
+  .pslide .pbox{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--gold);border-radius:10px;background:rgba(0,0,0,.25);color:var(--gold);text-align:center;font-weight:600}
+  .pslide .pic{font-size:36px;line-height:1}
+  .pslide .pbox{font-size:14px;padding:6px}
+  .pslide small{font-weight:400;color:var(--dim)}
+  .pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}
+  .pdots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25)}
+  .pdots i.on{background:var(--gold)}
+  @media (prefers-reduced-motion: reduce){ .ptrack{transition:none} }
+  .foot{text-align:center;font-size:12.5px;color:var(--dim);margin:22px 0 4px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)}
+  .resetnote{margin:10px 0 0;padding:7px 10px;border:1px solid var(--gold);border-radius:8px;background:rgba(242,193,78,.14);font-size:13.5px;color:var(--ink)}
+  .resetnote b{font-variant-numeric:tabular-nums}
+  .dots{display:flex;gap:7px;align-items:center;min-height:28px;flex-wrap:wrap}
+  .dot{width:18px;height:18px;border-radius:50%;background:var(--gold)}
+  .dot.used{background:transparent;border:2px solid var(--line)}
+  .dot.saved{background:var(--jade)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .log{list-style:none;margin:0;padding:0;font-size:13.5px;color:var(--dim)}
+  .log li{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;gap:10px}
+  .log li:last-child{border-bottom:0}
+  .note{font-size:12.5px;color:var(--dim);margin:0}
+  ul.note,ol.note{padding-left:20px}
+  ol.note li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<svg class="goat" viewBox="0 0 400 350" aria-hidden="true" focusable="false">
+  <g fill="#f2c14e">
+    <path d="M96 196 q-26 -14 -16 -44 q14 10 26 30 z"/>
+    <ellipse cx="200" cy="212" rx="112" ry="62"/>
+    <rect x="118" y="238" width="19" height="96" rx="9"/><rect x="150" y="246" width="19" height="92" rx="9"/>
+    <rect x="236" y="246" width="19" height="92" rx="9"/><rect x="268" y="238" width="19" height="96" rx="9"/>
+    <path d="M262 186 L296 104 L338 122 L306 222 z"/>
+    <ellipse cx="324" cy="104" rx="40" ry="26" transform="rotate(18 324 104)"/>
+    <ellipse cx="288" cy="100" rx="18" ry="7" transform="rotate(-28 288 100)"/>
+    <path d="M340 126 q6 30 -10 44 q-8 -22 -6 -40 z"/>
+  </g>
+  <g fill="none" stroke="#f2c14e" stroke-width="11" stroke-linecap="round">
+    <path d="M304 84 C 296 40, 252 28, 234 60"/>
+    <path d="M320 80 C 318 34, 278 12, 254 34"/>
+  </g>
+  <circle cx="334" cy="98" r="4.5" fill="#4d0b0b"/>
+</svg>
+<div class="admodal" id="adModal" role="dialog" aria-modal="true" aria-labelledby="adTitle" hidden>
+  <div class="adbox">
+    <button type="button" class="adx" id="adX" aria-label="Close">✕</button>
+    <p class="adkicker" id="adTitle"><span id="adLead"></span><span id="adSponsor"></span></p>
+    <a class="adart" id="adArt" href="https://www.google.com/" target="_blank" rel="noopener sponsored" aria-label="Sponsor advertisement (opens in a new tab)">Sponsor Advertisement<small>320 × 480</small></a>
+    <a class="go wide advisit" id="adVisit" href="https://www.google.com/" target="_blank" rel="noopener sponsored">Visit</a>
+  </div>
+</div>
+<div class="wrap">
+  <header>
+    <h1>🧧 Beat the <span>Banker</span></h1>
+    <a class="ad" href="https://www.google.com/" target="_blank" rel="noopener sponsored" aria-label="Sponsor advertisement (opens in a new tab)">Sponsor Advertisement</a>
+    <div class="meta" id="phaseLine"></div>
+    <div class="meta who" id="who" hidden>Signed in as <b id="whoName"></b></div>
+  </header>
+
+  <section class="panel reg" id="regScreen" aria-labelledby="regTitle">
+    <div id="welcome">
+      <div class="herosq"><img src="/media/mwvr7kiq-cover-v1-0.png" alt="Beat the Banker: Game N Huat Chinese New Year card game"></div>
+      <button type="button" class="go wide" id="toSignUp">Sign up</button>
+      <p class="switch"><button type="button" class="linkish" id="welcomeSignIn">Sign in</button></p>
+    </div>
+    <form id="regForm" novalidate hidden>
+      <h2 id="regTitle">Register to play</h2>
+      <label class="field">Name
+        <input type="text" id="regName" autocomplete="name" autocapitalize="words" maxlength="60" placeholder="Your full name">
+      </label>
+      <label class="field">Email address
+        <input type="email" id="regEmail" name="email" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="name@example.com">
+      </label>
+      <label class="field">Mobile phone number
+        <span class="prefixed"><span class="prefix" aria-hidden="true">+60</span><input type="tel" id="regPhone" autocomplete="tel-national" inputmode="numeric" pattern="[0-9]*" maxlength="11" placeholder="123456789" aria-label="Mobile phone number, after +60, numbers only"></span>
+      </label>
+      <label class="check"><input type="checkbox" id="regAgree"> <span>I agree to the gameplay rules, terms and conditions, privacy policy, PDPA notice and agree to receive promotional emails or information from the organiser and sponsors.</span></label>
+      <p class="note small">One account per email and per mobile number.</p>
+      <div class="tsslot" id="tsSlotReg"></div>
+      <p class="err" id="regErr" role="alert"></p>
+      <button class="go wide" type="submit">Register</button>
+      <p class="switch"><button type="button" class="linkish" id="toSignIn">Sign in</button></p>
+    </form>
+
+    <form id="codeForm" novalidate hidden>
+      <h2>Check your email</h2>
+      <p>Code sent to <b id="codeEmail"></b>. <span id="codeWhy"></span></p>
+      <label class="field">Verification code
+        <input id="regCode" name="code" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      </label>
+      <p class="err" id="codeErr" role="alert"></p>
+      <button class="go wide" type="submit">Verify</button>
+      <p class="switch"><button type="button" class="linkish" id="codeBack">Back</button></p>
+    </form>
+
+    <form id="signForm" novalidate hidden>
+      <h2>Sign in</h2>
+      <label class="field">Email address
+        <input type="email" id="signEmail" name="email" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="name@example.com">
+      </label>
+      <div class="tsslot" id="tsSlotSign"></div>
+      <p class="err" id="signErr" role="alert"></p>
+      <button class="go wide" type="submit">Sign in</button>
+      <p class="switch"><button type="button" class="linkish" id="toRegister">Register</button></p>
+    </form>
+  </section>
+
+  <div class="panel tswrap" id="tsWrap" hidden><div class="tsslot" id="tsSlotVisit"></div></div>
+
+  <section class="panel lock" id="lockScreen" aria-labelledby="lockTitle" hidden>
+    <h2 id="lockTitle">Play paused for 1 hour</h2>
+    <p>Signed in on another device.</p>
+    <p class="lockclock">Play again at <span id="lockAt"></span></p>
+  </section>
+
+  <div id="game" hidden>
+
+  <div class="panel">
+    <h2>Banker's ang pow</h2>
+    <div class="potrow"><span class="pot" id="pot">0</span></div>
+    <div class="bar" id="potBar"><i id="potFill"></i></div>
+    <div class="sub"><span id="potState">The banker is standing</span></div>
+  </div>
+
+  <div class="panel table">
+    <div class="cards">
+      <div class="slot"><div class="card empty" id="c1"></div><div class="val" id="v1"></div></div>
+      <div class="slot"><div class="card empty" id="c3"></div><div class="val" id="v3"></div></div>
+      <div class="slot"><div class="card empty" id="c2"></div><div class="val" id="v2"></div></div>
+    </div>
+    <div class="cond" id="cond"></div>
+    <div class="banner" id="banner" aria-live="polite"></div>
+    <div class="countdown" id="countdown" hidden><span id="cdText"></span><span class="cdtrack"><i id="cdBar"></i></span></div>
+    <div class="actions">
+      <button class="go" id="dealBtn">DEAL!</button>
+      <button class="go" id="betBtn" hidden>Go for it!</button>
+      <button id="skipBtn" hidden>Skip</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="me">
+      <div><small id="scoreLabel">Current Score</small><b id="score">0</b></div>
+      <div><small>Tries left today</small><div class="dots" id="dots"></div></div>
+    </div>
+    <div class="row">
+      <button class="small" id="inviteBtn">Invite (+1 try)</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Play History (today)</h2>
+    <ul class="log" id="log"><li><span>No hands yet</span></li></ul>
+  </div>
+
+</div>
+  <a class="ad ad2" href="https://www.google.com/" target="_blank" rel="noopener sponsored" aria-label="Sponsor advertisement (opens in a new tab)">Sponsor Advertisement</a>
+  <section class="panel pcar" aria-label="Prizes">
+    <div class="pview"><div class="ptrack" id="pTrack"></div></div>
+    <div class="pdots" id="pDots" aria-hidden="true"></div>
+  </section>
+  <section class="panel info prizespanel" aria-label="List of prizes">
+    <details id="d-prizes" class="solo">
+      <summary>List of prizes</summary>
+      <table class="prizes">
+        <thead><tr><th scope="col">Place</th><th scope="col">Prize</th></tr></thead>
+        <tbody id="prizeBody">
+          <tr data-name="Shopping voucher" data-value="RM500" data-sponsor="[Sponsor A]"><td>1st</td><td>Shopping voucher<small>RM500 · [Sponsor A]</small></td></tr>
+          <tr data-name="Shopping voucher" data-value="RM500" data-sponsor="[Sponsor A]"><td>2nd</td><td>Shopping voucher<small>RM500 · [Sponsor A]</small></td></tr>
+          <tr data-name="Dining voucher" data-value="RM500" data-sponsor="[Sponsor B]"><td>3rd</td><td>Dining voucher<small>RM500 · [Sponsor B]</small></td></tr>
+          <tr data-name="Electronics voucher" data-value="RM500" data-sponsor="[Sponsor C]"><td>4th</td><td>Electronics voucher<small>RM500 · [Sponsor C]</small></td></tr>
+          <tr data-name="Festive hamper" data-value="RM250" data-sponsor="[Sponsor D]"><td>5th</td><td>Festive hamper<small>RM250 · [Sponsor D]</small></td></tr>
+          <tr data-name="Festive hamper" data-value="RM250" data-sponsor="[Sponsor D]"><td>6th</td><td>Festive hamper<small>RM250 · [Sponsor D]</small></td></tr>
+          <tr data-name="Grocery voucher" data-value="RM250" data-sponsor="[Sponsor E]"><td>7th</td><td>Grocery voucher<small>RM250 · [Sponsor E]</small></td></tr>
+          <tr data-name="Grocery voucher" data-value="RM250" data-sponsor="[Sponsor E]"><td>8th</td><td>Grocery voucher<small>RM250 · [Sponsor E]</small></td></tr>
+          <tr data-name="Café voucher" data-value="RM250" data-sponsor="[Sponsor F]"><td>9th</td><td>Café voucher<small>RM250 · [Sponsor F]</small></td></tr>
+          <tr data-name="Café voucher" data-value="RM250" data-sponsor="[Sponsor F]"><td>10th</td><td>Café voucher<small>RM250 · [Sponsor F]</small></td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>RM3,500</td></tr></tfoot>
+      </table>
+    </details>
+  </section>
+
+  <section class="panel lbpanel" aria-labelledby="lbTitle">
+    <h2 id="lbTitle">Leaderboard: top 50</h2>
+    <p class="note">Updates every 5 min</p>
+    <p class="lbmore" id="lbMore">Sign in to see the full top 50.</p>
+    <table class="lb">
+      <thead><tr><th scope="col">Place</th><th scope="col">Player</th><th scope="col">Score</th></tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </section>
+
+  <section class="panel sponsors" aria-labelledby="spTitle">
+    <h2 id="spTitle">Our sponsors</h2>
+    <div class="sgrid" id="sGrid" aria-live="off">
+      <a class="stile" href="https://www.google.com/" target="_blank" rel="noopener sponsored"></a>
+      <a class="stile" href="https://www.google.com/" target="_blank" rel="noopener sponsored"></a>
+    </div>
+    <p class="becomesp"><a href="mailto:jk@epnox.com?subject=Interest%20to%20become%20a%20sponsor" target="_blank" rel="noopener">Become a sponsor</a></p>
+  </section>
+
+  <section class="panel info" id="info" aria-labelledby="infoTitle">
+    <h2 id="infoTitle">Rules and policies</h2>
+
+    <details id="d-rules">
+      <summary>Gameplay rules</summary>
+      <ol class="note">
+        <li>Card values: 2 to 10 count as their number, J is 11, Q is 12 and K is 13. Suits do not matter.</li>
+        <li>An Ace counts as 1 or 14. When you are dealt an Ace, the game picks the value that gives you the wider gap and shows it under the card: with a 2 to 7 the Ace counts as 14, with an 8 to K it counts as 1. Two Aces count as 1 and 14.</li>
+        <li>If the next card is an Ace, it matches your Ace if you hold one. Otherwise it is outside your two cards.</li>
+        <li>You get <span class="nTries">10</span> tries a day. Each try deals you two cards from a full, freshly shuffled deck of 52. Your two cards always have at least one rank between them.</li>
+        <li>Before you choose, the game lists exactly which next cards score +100, which score the +200 double and which cost 100.</li>
+        <li>Choose "Go for it!" or "Skip". Either choice uses the try, and the next card is shown both ways.</li>
+        <li>You have 10 seconds to choose. If you do nothing, the game goes for it for you.</li>
+        <li>Your account can be used on one device only. Signing in on a new device needs a code sent to your email. There is no sign-out: if you sign in on another device, the earlier device is signed out and play is paused for 1 hour, even if you have simply changed phones.</li>
+        <li>If you go for it: a card strictly between your two cards scores +100 points. A card of the same rank as either of your cards is a double: it scores +200 points and the try is given back, so you play again. Any other card costs 100 points, but your score never goes below zero.</li>
+        <li>If you skip, your points do not change and the try is used, whatever the next card is.</li>
+        <li>Every point players score comes out of the banker's ang pow. When it is empty the banker has fallen and the game closes until tomorrow. A hand you have not yet decided on is cancelled and its try is given back.</li>
+        <li>Gold dots are today's tries and expire at the end of the day. Every invited friend gives you one extra try. You can use at most 5 extra tries a day (the green dots); the rest carry forward. Extra tries are used first, then today's 3 tries.</li>
+        <li>Trial run, 16 January to 5 February 2027: your score resets to zero every day, with a daily leaderboard.</li>
+        <li>Final showdown, 6 to 20 February 2027: every point adds to your total, and the showdown leaderboard ranks players by that total.</li>
+        <li>Points are only for the leaderboard. They cannot be bought or cashed out.</li>
+      </ol>
+    </details>
+
+    <details id="d-terms">
+      <summary>Terms and conditions</summary>
+      <ol class="note">
+        <li><b>Organiser.</b> Beat the Banker is run by [Company Name] ([registration number]), [address].</li>
+        <li><b>Period.</b> The trial run is from 16 January to 5 February 2027. The final showdown is from 6 February to 20 February 2027, ending at [11:59 pm] Malaysia time.</li>
+        <li><b>Who can take part.</b> Residents of Malaysia aged [18] or older. Employees of the organiser and prize sponsors, and their immediate families, [may not win prizes].</li>
+        <li><b>Free to play.</b> No purchase or payment is needed. Points have no cash value and cannot be bought, sold, transferred or exchanged.</li>
+        <li><b>One account per person.</b> Each person may register one account with one email address. Duplicate, shared or fake accounts may be removed and their scores cancelled.</li>
+        <li><b>Fair play.</b> Using scripts, bots, more than one account, or any way of interfering with the game is not allowed. The organiser may cancel scores, remove accounts and withhold prizes for any breach.</li>
+        <li><b>Winners.</b> Prizes go to the players with the highest total scores in the final showdown. If two players have the same total, the player who reached it first ranks higher. Results are final once verified.</li>
+        <li><b>Prize claims.</b> Winners are contacted on the mobile number they registered within [7] days of the showdown ending, and must reply within [7] days. Winners must confirm their identity before a prize is released. Unclaimed prizes may go to the next eligible player.</li>
+        <li><b>Prizes.</b> Prizes are as listed, are not exchangeable for cash and cannot be transferred. Prize sponsors are responsible for supplying their prizes. The organiser may substitute a prize of equal or greater value.</li>
+        <li><b>Changes.</b> The organiser may change, pause or end the game, or these terms, if needed because of technical problems, misuse or circumstances beyond its control.</li>
+        <li><b>Liability.</b> To the extent allowed by law, the organiser is not responsible for lost connections, device problems or any loss from taking part.</li>
+        <li><b>Governing law.</b> These terms are governed by the laws of Malaysia.</li>
+      </ol>
+    </details>
+
+    <details id="d-privacy">
+      <summary>Privacy policy</summary>
+      <ol class="note">
+        <li><b>What we collect.</b> Your email address, your mobile number, your game records (hands played, scores, tries and invites), the type of device you use and technical data such as your IP address.</li>
+        <li><b>Why we collect it.</b> To create and secure your account, run the game and leaderboards, prevent cheating and fake accounts, contact you if you win a prize, and send you promotional emails from the organiser and sponsors.</li>
+        <li><b>Your phone number</b> is used only to contact you if you win a prize. It is never used for marketing.</li>
+        <li><b>Who we share it with.</b> Our hosting and email service providers, and Cloudflare for bot protection, who process data on our behalf. Winners' names may be shared with the sponsor of their prize to arrange delivery. We do not sell your data.</li>
+        <li><b>Marketing.</b> By registering you agree to receive promotional emails and information from the organiser and sponsors. You can ask us to stop at any time using the link in any email.</li>
+        <li><b>Storage on your phone.</b> We keep a small sign-in record in your browser so you stay signed in.</li>
+        <li><b>How long we keep it.</b> Until [3] months after the event ends, except where the law requires us to keep it longer. Then it is deleted.</li>
+        <li><b>Security.</b> Your data is stored with access limited to our admin team.</li>
+        <li><b>Contact.</b> [Data protection contact name], [email address], [phone number].</li>
+      </ol>
+    </details>
+
+    <details id="d-pdpa">
+      <summary>PDPA notice</summary>
+      <p class="note">This notice is given under Malaysia's Personal Data Protection Act 2010.</p>
+      <ol class="note">
+        <li><b>Data user.</b> [Company Name], [address].</li>
+        <li><b>Personal data processed.</b> Email address, mobile number, game records and device and technical data.</li>
+        <li><b>Purposes.</b> Account registration and security, running the game, preventing fraud, contacting prize winners, and sending promotional emails from the organiser and sponsors.</li>
+        <li><b>Source.</b> The data is collected from you when you register and play.</li>
+        <li><b>Required or optional.</b> Your email address and mobile number are required to take part. If you do not provide them you cannot register. Agreeing to receive promotional emails from the organiser and sponsors is part of registering. You can ask us to stop these emails at any time.</li>
+        <li><b>Disclosure.</b> To our service providers for hosting, email and bot protection, and to prize sponsors for delivering prizes to winners.</li>
+        <li><b>Your rights.</b> You may ask to access or correct your personal data, limit how it is processed, or withdraw your marketing consent, by contacting us below.</li>
+        <li><b>Enquiries.</b> [Data protection contact name], [email address], [phone number].</li>
+        <li><b>Language.</b> [A Bahasa Malaysia version of this notice will be provided.]</li>
+      </ol>
+    </details>
+  </section>
+  <footer class="foot"><a href="https://gamenhuat.com" target="_blank" rel="noopener" class="badge"><img src="/media/mwvs4lgf-retro-game-n-huat-lucky-badge.png" alt="Game N Huat"></a><br>Made with lots of fun by<br>© 2026 Epnox Technologies Sdn Bhd. All rights <span id="signOut">reserved</span>.</footer>
+</div>
+
+<script>
+"use strict";
+const SUITS = ['♠','♥','♦','♣'], RANKS = {11:'J',12:'Q',13:'K',14:'A'};
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const S = { me:null, hand:null, phase:'idle', autoAt:0, busy:false, score:0, log:[] };
+/* ---------- cards: the server sends 'AS', '10H' …; the page draws them ---------- */
+const SUIT_INDEX = { S:0, H:1, D:2, C:3 }, RANK_NUM = { A:14, J:11, Q:12, K:13 };
+const toCard = t => { const r = t.slice(0, -1), n = RANK_NUM[r] || Number(r); return ((n - 2) << 2) | SUIT_INDEX[t.slice(-1)]; };
+const rankOf = c => (c >> 2) + 2;
+const cardText = c => (RANKS[rankOf(c)] || rankOf(c)) + SUITS[c & 3];
+const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function paintCard(el, c, mode, delay){
+  clearTimeout(el._t); clearTimeout(el._t2);
+  if (mode){ el.className = 'card ' + mode; el.innerHTML = ''; return; }
+  const s = SUITS[c & 3], red = (c & 3) === 1 || (c & 3) === 2;
+  const face = `<span class="s tl">${s}</span><span class="r">${RANKS[rankOf(c)] || rankOf(c)}</span><span class="s br">${s}</span>`;
+  const show = cls => { el.className = 'card ' + cls + (red ? ' red' : ''); el.innerHTML = face; };
+  if (calm){ show(''); return; }
+  if (!el.classList.contains('back')){ el.className = 'card back'; el.innerHTML = ''; }   // always turn over from the back
+  el._t = setTimeout(() => {
+    el.className = 'card back flip';                                       // turn the card over…
+    el._t2 = setTimeout(() => show('flip'), 210);                           // …and show its face halfway through
+  }, delay || 0);
+}
+function dealBacks(){                                                      // three face-down cards slide in
+  ['c1','c2','c3'].forEach((id, i) => { const el = $(id); paintCard(el, null, 'back'); if (!calm){ el.style.animationDelay = (i * 90) + 'ms'; el.className = 'card back deal'; } });
+}
+function banner(text, cls){ const b = $('banner'); b.textContent = text; b.className = 'banner ' + (cls || ''); }
+const label = r => RANKS[r] || String(r);
+function outcomeFor(h, r){                      // r = rank of the next card (2 to 14, Ace = 14)
+  if (r === h.ra || r === h.rb) return 'post';   // same rank as one of your cards, Aces included
+  if (r === 14) return 'lose';                    // an Ace you do not hold is outside either way
+  return (r > h.lo && r < h.hi) ? 'win' : 'lose';
+}
+const orList = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' or ' + a[a.length-1] : a[0];
+function showCond(h, hit){
+  if (!h){ $('cond').innerHTML = ''; return; }
+  const win = [], post = [], lose = [];
+  for (let r = 2; r <= 14; r++){ const o = outcomeFor(h, r); (o === 'win' ? win : o === 'post' ? post : lose).push(label(r)); }
+  const row = (k, pts, text) => `<div class="${hit === k ? 'hit' : ''}"><b>${pts}</b><span>${text}</span></div>`;
+  $('cond').innerHTML = row('win', '+100', 'if the next card is ' + orList(win)) +
+    row('post', '+200', 'if it is ' + orList(post) + ' (double, and your try is returned)') +
+    row('lose', S.score > 0 ? '−100' : '0', lose.length ? 'if it is ' + orList(lose) + (S.score > 0 ? '' : ' (nothing to lose at zero)') : 'not possible with these cards');
+}
+
+function paintVal(id, rank, value){
+  const el = $(id);
+  if (rank == null){ el.className = 'val'; el.innerHTML = ''; return; }
+  el.className = 'val' + (rank === 14 ? ' ace' : '');
+  el.innerHTML = rank === 14 ? `Ace counts as <b>${value}</b>` : `Value <b>${value}</b>`;
+}
+function clearVals(){ ['v1','v2','v3'].forEach(id => paintVal(id, null)); }
+function handFrom(h){                                    // the shape showCond and the value labels expect
+  const a = toCard(h.c1), b = toCard(h.c2), ra = rankOf(a), rb = rankOf(b);
+  const lowFirst = h.v1 <= h.v2;
+  return { id: h.id, a, b, ra, rb, va: h.v1, vb: h.v2, lo: h.low, hi: h.high,
+    loLabel: label(lowFirst ? ra : rb), hiLabel: label(lowFirst ? rb : ra) };
+}
+
+/* ---------- talking to the game server ---------- */
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k, v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e){} },
+};
+const deviceId = (() => { let d = store.get('gnh-device'); if (!d){ d = (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2,'0')).join('')); store.set('gnh-device', d); } return d; })();
+let token = null;                        // true while signed in; the sign-in itself lives in a cookie page scripts cannot read
+store.set('gnh-token', null);            // remove any sign-in left in browser storage by older versions
+
+async function api(path, data){
+  const opts = { method: data === undefined ? 'GET' : 'POST', headers: { 'X-Requested-With': 'gnh' }, credentials: 'same-origin' };
+  if (data !== undefined){ opts.headers['content-type'] = 'application/json'; opts.body = JSON.stringify(data); }
+  let r, out;
+  try { r = await fetch(path, opts); out = await r.json(); }
+  catch(e){ return { error: 'No connection. Please check your internet and try again.', status: 0 }; }
+  out.status = r.status;
+  if (r.status === 401 && token){ kickedOut(out.error); }
+  else if (out.suspended){ kickedOut(out.error); }
+  else if (r.status === 423 && out.pausedUntil){ showLock(out.pausedUntil); }
+  return out;
+}
+
+/* ---------- Cloudflare Turnstile: the human check ---------- */
+let tsWidget = null, tsToken = null, tsWaiters = [], tsSlot = null, tsWant = null;
+// One check box, moved to whichever form needs it (sign-up, sign-in or a returning visit).
+function placeTs(slot){
+  tsWant = slot;
+  if (!window.turnstile || !S.siteKey || tsSlot === slot) return;
+  if (tsWidget !== null){ try { turnstile.remove(tsWidget); } catch(e){} tsWidget = null; tsToken = null; }
+  tsSlot = slot;
+  tsWidget = turnstile.render('#' + slot, { sitekey: S.siteKey, theme: 'dark', size: 'flexible',
+    callback: t => { tsToken = t; tsWaiters.splice(0).forEach(f => f(t)); },
+    'expired-callback': () => { tsToken = null; },
+    'error-callback': () => { tsToken = null; } });
+}
+function tsReady(){ if (tsWant) placeTs(tsWant); }
+window.onTurnstileLoad = tsReady;
+function humanCheck(slot){                                // a fresh token for each request that needs one
+  placeTs(slot);
+  const after = t => { tsToken = null; setTimeout(() => { try { turnstile.reset(tsWidget); } catch(e){} }, 0); return t; };
+  if (tsToken) return Promise.resolve(after(tsToken));
+  return new Promise(res => tsWaiters.push(t => res(after(t))));
+}
+
+/* ---------- screens ---------- */
+function showForm(id){
+  ['welcome','regForm','codeForm','signForm'].forEach(f => $(f).hidden = f !== id);
+  ['regErr','codeErr','signErr'].forEach(e => $(e).textContent = '');
+  $('tsWrap').hidden = true;
+  if (id === 'regForm') placeTs('tsSlotReg'); else if (id === 'signForm') placeTs('tsSlotSign');
+  const first = $(id).querySelector('input'); if (first && first.focus) first.focus();
+}
+function showReg(form){
+  lockLeaderboard(true); S.me = null; S.phase = 'idle'; S.autoAt = 0;
+  $('lockScreen').hidden = true; $('regScreen').hidden = false; $('game').hidden = true; $('who').hidden = true;
+  showForm(form || 'welcome'); loadLeaderboard();
+}
+let lockTimer = null;
+function showLock(until){
+  lockLeaderboard(true); S.phase = 'idle'; S.autoAt = 0;
+  $('regScreen').hidden = true; $('game').hidden = true; $('adModal').hidden = true; $('tsWrap').hidden = true;
+  $('lockScreen').hidden = false;
+  $('lockAt').textContent = new Date(until).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+  clearTimeout(lockTimer);
+  lockTimer = setTimeout(refresh, Math.max(1000, until - Date.now() + 1500));   // play resumes on its own
+}
+function kickedOut(msg){                                  // this phone's sign-in was replaced by a newer phone, or has ended
+  token = null;
+  $('adModal').hidden = true;
+  showReg('signForm');
+  $('signErr').textContent = msg || 'You have been signed out. Please sign in again.';
+}
+
+/* ---------- the game screen ---------- */
+function paint(){
+  const me = S.me; if (!me) return;
+  $('phaseLine').textContent = (me.phase === 'showdown' ? 'Final showdown' : me.phase === 'ended' ? 'The game has ended' : 'Trial run') + ' · ' +
+    new Date(me.day + 'T00:00:00+08:00').toLocaleDateString('en-MY', { weekday:'short', day:'numeric', month:'short' });
+  $('pot').textContent = fmt(me.potLeft);
+  const share = me.potStart ? me.potLeft / me.potStart : 0;
+  $('potFill').style.width = (share*100) + '%';
+  $('potBar').className = 'bar' + (share < 0.2 ? ' low' : '');
+  $('potState').textContent = me.beaten ? 'Banker has been beaten! Come back tomorrow!' : share < 0.2 ? 'The banker is wobbling' : 'The banker is standing';
+  S.score = me.phase === 'showdown' ? me.totalScore : me.score;
+  $('scoreLabel').textContent = me.phase === 'showdown' ? 'Total Score' : 'Current Score';
+  $('score').textContent = fmt(S.score);
+  const t = me.tries, later = Math.max(0, t.extraBanked - t.extra);
+  let dots = '';
+  for (let i = 0; i < t.extra; i++) dots += '<span class="dot saved" title="Extra try you can use today"></span>';
+  for (let i = 0; i < (t.dailyTotal || 3); i++) dots += `<span class="dot${i < t.daily ? '' : ' used'}" title="${i < t.daily ? "Today's try" : 'Used'}"></span>`;
+  if (later > 0) dots += `<span class="meta">+${later} saved for later</span>`;
+  $('dots').innerHTML = dots;
+  $('dots').setAttribute('aria-label', `${t.daily} of today's tries and ${t.extra} extra tries left today, ${later} saved for later`);
+  const choosing = S.phase === 'choose';
+  $('dealBtn').hidden = choosing; $('betBtn').hidden = !choosing; $('skipBtn').hidden = !choosing;
+  $('dealBtn').disabled = S.busy || me.beaten || t.daily + t.extra === 0 || me.phase === 'ended' || me.phase === 'not_started';
+  $('betBtn').disabled = $('skipBtn').disabled = S.busy;
+  $('dealBtn').textContent = S.phase === 'result' ? 'Next' : 'DEAL!';
+  const log = (me.history || []).slice().reverse();
+  $('log').innerHTML = log.length ? log.map(h => {
+    const cards = [h.c1, h.c3, h.c2].map(c => cardText(toCard(c))).join(' · ');
+    const text = h.choice === 'skip' ? 'Skipped' : h.result === 'match' ? '+200, try returned' : h.result === 'between' ? '+100' : h.points < 0 ? '−100' : 'Outside';
+    return `<li><span>${cards}</span><span class="${h.points > 0 ? 'pos' : h.points < 0 ? 'neg' : ''}">${text}${h.choice === 'auto' ? ' (auto)' : ''}</span></li>`;
+  }).join('') : '<li><span>No hands yet</span></li>';
+}
+
+function enterGame(me){
+  S.me = me; lockLeaderboard(false); clearTimeout(lockTimer);
+  $('lockScreen').hidden = true; $('regScreen').hidden = true; $('game').hidden = false;
+  $('whoName').textContent = me.name; $('who').hidden = false;
+  if (me.openHand) showHand(me.openHand);
+  else if (S.phase !== 'result'){ S.phase = 'idle'; dealBacks(); clearVals(); showCond(null);
+    banner(me.beaten ? 'Banker has been beaten! Come back tomorrow!' : me.phase === 'not_started' ? 'The game starts on 16 January 2027.' :
+      me.phase === 'ended' ? 'The game has ended. Thank you for playing!' : `You have ${me.tries.daily + me.tries.extra} tries today.`, me.beaten ? 'gold' : ''); }
+  paint(); maybeShowAd(); loadLeaderboard();
+}
+
+async function refresh(){
+  const me = await api('/api/me');
+  if (me.status === 401 && !token){ showReg(refCode ? 'regForm' : 'welcome'); return; }   // not signed in on this phone
+  if (me.status === 200){
+    token = true;
+    if (me.pausedUntil) return showLock(me.pausedUntil);
+    if (me.needVisit){ $('regScreen').hidden = true; $('tsWrap').hidden = false; const v = await api('/api/visit', { turnstile: await humanCheck('tsSlotVisit') }); $('tsWrap').hidden = true; if (v.status !== 200){ banner(v.error || 'The human check failed.', 'lose'); } }
+    enterGame(me);
+  } else if (me.status !== 401 && me.status !== 423){
+    showReg('welcome'); $('regErr').textContent = me.error || '';
+  }
+}
+
+function showHand(h){
+  S.hand = handFrom(h);
+  ['c1','c2','c3'].forEach(id => { $(id).style.animationDelay = ''; paintCard($(id), null, 'back'); });
+  paintCard($('c1'), S.hand.a, null, 120); paintCard($('c2'), S.hand.b, null, 320);   // your two cards turn over
+  if (!calm) setTimeout(() => { $('c3').className = 'card back wiggle'; }, 650);         // the banker's card waits, face down
+  paintVal('v1', S.hand.ra, S.hand.va); paintVal('v2', S.hand.rb, S.hand.vb); paintVal('v3', null);
+  showCond(S.hand);
+  banner('Go for it or skip? Either one uses this try.');
+  S.phase = 'choose'; S.autoAt = Date.now() + h.secondsLeft * 1000; paintCountdown(); paint();
+}
+
+async function deal(){
+  if (S.busy || S.phase === 'choose') return;
+  S.busy = true; paint();
+  const r = await api('/api/deal', {});
+  S.busy = false;
+  if (r.status === 200 && r.hand){ showHand(r.hand); track('deal'); return; }
+  if (r.needVisit){ await refresh(); return; }
+  if (r.status !== 401 && r.status !== 423){ banner(r.error || 'Please try again.', r.beaten ? 'gold' : ''); await reloadMe(); }
+}
+
+async function choose(go, auto){
+  if (S.phase !== 'choose' || S.busy) return;
+  S.busy = true; S.autoAt = 0; paintCountdown(); paint();
+  const h = S.hand;
+  const r = await api('/api/choose', { hand_id: h.id, go });
+  S.busy = false;
+  if (r.status !== 200 || !r.result){ if (r.status !== 401 && r.status !== 423){ banner(r.error || 'Please try again.', 'lose'); S.phase = 'idle'; await reloadMe(); } return; }
+  const res = r.result, c = toCard(res.c3), rk = rankOf(c);
+  const outcome = res.result === 'between' ? 'win' : res.result === 'match' ? 'post' : res.result === 'outside' ? 'lose' : outcomeFor(h, rk);
+  paintCard($('c3'), c); showCond(h, outcome);
+  if (rk !== 14) paintVal('v3', rk, rk);
+  else if (h.ra === 14 && h.rb === 14){ $('v3').className = 'val ace'; $('v3').innerHTML = 'Ace: <b>matches</b>'; }
+  else if (h.ra === 14 || h.rb === 14) paintVal('v3', 14, h.ra === 14 ? h.va : h.vb);
+  else { $('v3').className = 'val ace'; $('v3').innerHTML = 'Ace: <b>outside</b>'; }
+  const t = label(rk), pair = h.loLabel + ' and ' + h.hiLabel, scoreBefore = S.score;
+  let msg, cls = '';
+  if (res.choice === 'skip'){
+    msg = outcome === 'win' ? `Skipped. ${t} was between ${pair}.` : outcome === 'lose' ? `Skipped. Good call, ${t} was outside ${pair}.` : `Skipped. ${t} matched your ${t}: that was a double.`;
+  } else if (outcome === 'win'){ msg = `${t} is between ${pair}. +100 points. Huat ah!`; cls = 'win'; }
+  else if (outcome === 'post'){ msg = `${t} matches your ${t}. Double! +200 points, and you get this try back.`; cls = 'gold'; }
+  else { msg = scoreBefore > 0 ? `${t} is outside ${pair}. −100 points.` : `${t} is outside ${pair}. Nothing lost: your score never goes below zero.`; cls = scoreBefore > 0 ? 'lose' : ''; }
+  if (auto) msg = "Time's up, so the game went for it. " + msg;
+  banner(msg, cls);
+  S.phase = 'result'; S.hand = null;
+  await reloadMe();
+  const me = S.me;
+  if (me && !me.beaten && me.tries.daily + me.tries.extra === 0){
+    $('banner').textContent += me.tries.extraBanked > 0 ? ` That is today's limit. Your ${me.tries.extraBanked} saved tries carry forward.` : ' No tries left today. Come back tomorrow!';
+    setTimeout(maybeShowEndAd, 1800);                     // let the result show first
+  }
+}
+
+async function reloadMe(){
+  const me = await api('/api/me');
+  if (me.status === 200){ S.me = me; paint(); }
+}
+
+/* ---------- 10-second choice timer ---------- */
+function paintCountdown(){
+  const el = $('countdown');
+  if (!S.autoAt || S.phase !== 'choose'){ el.hidden = true; return; }
+  const left = Math.max(0, S.autoAt - Date.now()), secs = Math.ceil(left/1000);
+  el.hidden = false;
+  el.className = 'countdown' + (secs <= 3 ? ' urgent' : '');
+  $('cdText').innerHTML = `Choose within <b>${secs}</b> ${secs === 1 ? 'second' : 'seconds'} or the game will auto choose.`;
+  $('cdBar').style.width = (left / 10000 * 100) + '%';
+}
+setInterval(() => {
+  if (!S.autoAt || S.phase !== 'choose') return;
+  if (Date.now() >= S.autoAt) choose(true, true); else paintCountdown();
+}, 200);
+
+$('dealBtn').addEventListener('click', deal);
+$('betBtn').addEventListener('click', () => choose(true));
+$('skipBtn').addEventListener('click', () => choose(false));
+
+/* ---------- invites: share a link with your code ---------- */
+$('inviteBtn').addEventListener('click', async () => {
+  if (!S.me) return;
+  const link = location.origin + '/?ref=' + S.me.inviteCode;
+  const text = 'Join me in Beat the Banker this CNY! Sign up with my link:';
+  try {
+    if (navigator.share){ await navigator.share({ title: 'Beat the Banker', text, url: link }); return; }
+    await navigator.clipboard.writeText(text + ' ' + link);
+    banner('Invite link copied. You get +1 try when a friend signs up with it.', 'gold');
+  } catch(e){ banner('Your invite link: ' + link); }
+});
+const refCode = (new URLSearchParams(location.search).get('ref') || store.get('gnh-ref') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+if (refCode) store.set('gnh-ref', refCode);               // keep it if the friend signs up later
+
+/* ---------- leaderboard: top 5 for visitors, top 50 when signed in ---------- */
+async function loadLeaderboard(){
+  const r = await api('/api/leaderboard');
+  if (r.status !== 200) return;
+  $('lbTitle').textContent = r.board === 'showdown' ? 'Leaderboard: top 50' : "Today's leaderboard: top 50";
+  $('lbBody').innerHTML = r.rows.length ? r.rows.map(x => `<tr${x.rank <= 10 ? ' class="prize"' : ''}><td>${x.rank}</td><td>${x.name.replace(/[<>&"]/g, '')}</td><td>${fmt(x.score)}</td></tr>`).join('')
+    : '<tr><td></td><td>No scores yet. Be the first!</td><td></td></tr>';
+}
+setInterval(() => { if (!document.hidden) loadLeaderboard(); }, 5 * 60 * 1000);
+function lockLeaderboard(on){ const p = document.querySelector('.lbpanel'); if (p) p.classList.toggle('locked', on); }
+/* ---------- sponsors and prizes: set in the admin panel; the placeholders stay until there are real ones ---------- */
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const safeUrl = u => /^https:\/\/[^\s"'<>]+$/i.test(String(u || '')) ? String(u) : '#';   // sponsor links: https only
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const CONTENT = { banners: [], popups: [], logos: [], prizes: [] };
+
+function showBanners(){
+  const picks = shuffle(CONTENT.banners.slice());
+  document.querySelectorAll('a.ad').forEach((el, i) => {
+    const b = picks.length ? picks[i % picks.length] : null;
+    if (!b) return;
+    el.href = safeUrl(b.url); el.classList.add('has-img');
+    el.setAttribute('aria-label', b.name + ' (opens in a new tab)');
+    el.innerHTML = `<img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy">`;
+  });
+}
+
+let prizeTimer = null;
+function prizeCarousel(){
+  const icons = { 'Shopping voucher':'🛍️', 'Dining voucher':'🍽️', 'Electronics voucher':'📱', 'Festive hamper':'🎁', 'Grocery voucher':'🛒', 'Café voucher':'☕' };
+  let prizes;
+  if (CONTENT.prizes.length){
+    prizes = CONTENT.prizes.slice();
+    $('prizeBody').innerHTML = prizes.map(p => `<tr><td>${esc(p.place)}</td><td>${esc(p.name)}<small>${esc([p.value, p.sponsor].filter(Boolean).join(' · '))}</small></td></tr>`).join('');
+    const tf = document.querySelector('table.prizes tfoot'); if (tf) tf.hidden = true;
+  } else {
+    const seen = {}; prizes = [];
+    document.querySelectorAll('table.prizes tbody tr').forEach(tr => {
+      const { name, value, sponsor } = tr.dataset;
+      if (!name || seen[name]) return; seen[name] = 1;                 // one slide per kind of prize
+      prizes.push({ name, value, sponsor, icon: icons[name] || '🏆' });
+    });
+  }
+  shuffle(prizes);
+  $('pTrack').innerHTML = prizes.map(p => {
+    const label = esc([p.name, p.value, p.sponsor && 'by ' + p.sponsor].filter(Boolean).join(', '));
+    return p.image
+      ? `<div class="pslide"><div class="pbox has-img" role="img" aria-label="${label}"><img src="${esc(p.image)}" alt="" loading="lazy">${esc(p.name)}<small>${esc(p.value || '')}</small></div></div>`
+      : `<div class="pslide"><div class="pbox" role="img" aria-label="${label}"><span class="pic" aria-hidden="true">${esc(p.icon || '🏆')}</span>${esc(p.name)}<small>${esc([p.value, p.sponsor].filter(Boolean).join(' · '))}</small></div></div>`;
+  }).join('');
+  const stops = Math.max(1, prizes.length - 1);                        // two prizes show at once, moving one at a time
+  $('pDots').innerHTML = '<i></i>'.repeat(stops);
+  let at = 0, paused = false;
+  const go = n => { at = n; $('pTrack').style.transform = 'translateX(' + (-50 * at) + '%)'; Array.from($('pDots').children).forEach((d, k) => d.classList.toggle('on', k === at)); };
+  const view = document.querySelector('.pview');
+  view.onmouseenter = () => paused = true; view.onmouseleave = () => paused = false;
+  let x0 = null;                                                      // swipe left or right on a phone
+  view.ontouchstart = e => { x0 = e.touches[0].clientX; paused = true; };
+  view.ontouchend = e => { if (x0 !== null){ const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) go((at + (dx < 0 ? 1 : stops - 1)) % stops); } x0 = null; paused = false; };
+  go(0);
+  clearInterval(prizeTimer);
+  prizeTimer = setInterval(() => { if (!paused && !document.hidden) go((at + 1) % stops); }, 3500);
+}
+
+let sponsorTimer = null;
+function sponsorCarousel(){
+  const pool = CONTENT.logos.length ? CONTENT.logos.map(l => ({ name: l.name, url: l.url, html: `<img src="${esc(l.logo)}" alt="">${esc(l.name)}` }))
+    : [['🏮','[Sponsor A]','Shopping'],['🍊','[Sponsor B]','Dining'],['📱','[Sponsor C]','Electronics'],['🎁','[Sponsor D]','Hampers'],
+       ['🛒','[Sponsor E]','Groceries'],['☕','[Sponsor F]','Café'],['🚗','[Sponsor G]','Auto'],['🏦','[Sponsor H]','Banking']]
+        .map(([logo, name, kind]) => ({ name, url: 'https://www.google.com/', html: `<span class="logo" aria-hidden="true">${logo}</span>${name}<small>${kind}</small>` }));
+  const tiles = Array.from($('sGrid').querySelectorAll('.stile')); let shown = [];
+  function pick(){
+    const free = pool.map((_, i) => i).filter(i => !shown.includes(i));          // always bring in sponsors not on screen
+    const out = shuffle(free).slice(0, 2);
+    while (out.length < 2) out.push(out.length % pool.length);                    // fewer than 2 sponsors: repeat
+    return out;
+  }
+  function render(){
+    shown = pick();
+    tiles.forEach((t, k) => { const sp = pool[shown[k]];
+      t.innerHTML = sp.html; t.href = safeUrl(sp.url);
+      t.setAttribute('aria-label', 'Visit ' + sp.name + ' (opens in a new tab)'); t.classList.remove('fade'); });
+  }
+  let paused = false;
+  const g = $('sGrid');
+  g.onmouseenter = () => paused = true; g.onmouseleave = () => paused = false;
+  g.onfocusin = () => paused = true; g.onfocusout = () => paused = false;
+  render();
+  clearInterval(sponsorTimer);
+  if (pool.length > 2) sponsorTimer = setInterval(() => { if (paused || document.hidden) return; tiles.forEach(t => t.classList.add('fade')); setTimeout(render, 350); }, 4000);
+}
+
+let contentReady = Promise.resolve();
+function loadContent(){ contentReady = loadContentNow(); return contentReady; }
+async function loadContentNow(){
+  const r = await api('/api/content');
+  if (r.status === 200) Object.assign(CONTENT, { banners: r.banners || [], popups: r.popups || [], logos: r.logos || [], prizes: r.prizes || [] });
+  showBanners(); prizeCarousel(); sponsorCarousel();
+}
+
+/* ---------- sponsor pop-up: every time a signed-in player opens the game, and after the last try of the day ---------- */
+function openAd(lead){
+  const sp = CONTENT.popups.length ? CONTENT.popups[Math.floor(Math.random() * CONTENT.popups.length)] : null;   // sponsors take turns
+  $('adLead').textContent = lead || '';
+  $('adSponsor').textContent = lead ? '' : (sp ? sp.name : '');            // the end-of-day pop-up shows only its message
+  const url = sp ? safeUrl(sp.url) : 'https://www.google.com/';
+  $('adVisit').href = url; $('adArt').href = url; $('adVisit').textContent = 'Visit';
+  if (sp){ $('adArt').classList.add('has-img'); $('adArt').innerHTML = `<img src="${esc(sp.image)}" alt="${esc(sp.name)}">`; }
+  $('adModal').hidden = false;
+  const v = $('adVisit'); if (v.focus) v.focus();
+}
+function maybeShowEndAd(){                               // once a day, after the last try is used
+  if (!S.me || store.get('gnh-endad') === S.me.day) return;
+  store.set('gnh-endad', S.me.day); openAd('Thanks for playing today');
+}
+let adShownThisLoad = false;
+function maybeShowAd(){                                  // once each time the page is opened or refreshed
+  if (!S.me || adShownThisLoad) return;
+  adShownThisLoad = true;
+  contentReady.then(() => openAd(''));                   // wait for the sponsor list so the right picture shows
+}
+function closeAd(){ $('adModal').hidden = true; const d = $('dealBtn'); if (d.focus) d.focus(); }
+$('adX').addEventListener('click', closeAd);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('adModal').hidden) closeAd(); });
+
+/* ---------- rules and policies: one open at a time ---------- */
+const infoBoxes = ['d-rules','d-terms','d-privacy','d-pdpa'].map(id => $(id));
+infoBoxes.forEach(d => d.addEventListener('toggle', () => { if (d.open) infoBoxes.forEach(o => { if (o !== d) o.open = false; }); }));
+function openInfo(id){ const d = $(id); d.open = true; infoBoxes.forEach(o => { if (o !== d) o.open = false; }); if (d.scrollIntoView) d.scrollIntoView({ behavior:'smooth', block:'start' }); }
+if (document.querySelectorAll) document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); openInfo(b.dataset.open); }));
+
+/* ---------- registration and sign-in ---------- */
+const DISPOSABLE = ['mailinator.com','guerrillamail.com','10minutemail.com','tempmail.com','temp-mail.org','yopmail.com','trashmail.com','sharklasers.com'];
+function checkEmail(raw){
+  const email = raw.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error:'Please enter a valid email address.' };
+  const [local, domain] = email.toLowerCase().split('@');
+  if (local.includes('+')) return { error:'Email addresses containing a "+" cannot be used. Please use your main address.' };
+  if (DISPOSABLE.includes(domain)) return { error:'Temporary email addresses cannot be used. Please use your main address.' };
+  return { email };
+}
+function checkPhone(raw){
+  let d = raw.trim();
+  if (!/^\d+$/.test(d)) return { error:'Please use numbers only, with no dashes or spaces. For example 123456789.' };
+  if (d.startsWith('0')) d = d.slice(1);
+  if (!/^1\d{8,9}$/.test(d)) return { error:'Please enter your Malaysian mobile number after +60, for example 123456789.' };
+  return { phone: d };
+}
+$('regPhone').addEventListener('input', e => {                                             // drop anything that is not a digit as it is typed or pasted
+  const v = e.target.value, digits = v.replace(/\D/g, '');
+  if (v !== digits){ e.target.value = digits; $('regErr').textContent = 'Numbers only, please: no dashes or spaces.'; }
+});
+let pending = null;
+function askCode(email, why){
+  $('codeEmail').textContent = email; $('codeWhy').textContent = why; $('regCode').value = '';
+  showForm('codeForm');
+}
+async function submitWith(btn, fn){ btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } }
+
+$('regForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('regName').value.trim().replace(/\s+/g, ' '), em = checkEmail($('regEmail').value), ph = checkPhone($('regPhone').value), err = $('regErr');
+  if (name.length < 2){ err.textContent = 'Please enter your name.'; return; }
+  if (em.error){ err.textContent = em.error; return; }
+  if (ph.error){ err.textContent = ph.error; return; }
+  if (!$('regAgree').checked){ err.textContent = 'Please tick the box to agree before continuing.'; return; }
+  submitWith(e.submitter || $('regForm').querySelector('[type=submit]'), async () => {
+    err.textContent = 'Checking…';
+    const r = await api('/api/register', { name, email: em.email, phone: ph.phone, agree: true, invite: refCode, turnstile: await humanCheck('tsSlotReg') });
+    if (r.status !== 200){ err.textContent = r.error || 'Please try again.'; return; }
+    pending = { mode: 'register', email: em.email };
+    askCode(em.email, '');
+  });
+});
+$('signForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const em = checkEmail($('signEmail').value), err = $('signErr');
+  if (em.error){ err.textContent = em.error; return; }
+  submitWith(e.submitter || $('signForm').querySelector('[type=submit]'), async () => {
+    err.textContent = 'Checking…';
+    const r = await api('/api/signin', { email: em.email, turnstile: await humanCheck('tsSlotSign') });
+    if (r.status !== 200){ err.textContent = r.error || 'Please try again.'; return; }
+    pending = { mode: 'signin', email: em.email };
+    askCode(em.email, 'If this account is on another device, that device will be signed out and play paused for 1 hour.');
+  });
+});
+$('codeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const code = $('regCode').value.trim();
+  if (!/^\d{6}$/.test(code)){ $('codeErr').textContent = 'Please enter the 6-digit code from your email.'; return; }
+  if (!pending) return showForm('welcome');
+  submitWith(e.submitter || $('codeForm').querySelector('[type=submit]'), async () => {
+    const r = await api('/api/verify', { email: pending.email, code, device_id: deviceId });
+    if (r.status !== 200){ $('codeErr').textContent = r.error || 'Please try again.'; return; }
+    token = true; track(pending.mode === 'register' ? 'sign_up' : 'login'); pending = null;
+    if (refCode) store.set('gnh-ref', null);
+    if (r.pausedUntil > Date.now()) return showLock(r.pausedUntil);
+    await refresh();
+  });
+});
+$('toSignIn').addEventListener('click', () => showForm('signForm'));
+$('toSignUp').addEventListener('click', () => showForm('regForm'));
+$('welcomeSignIn').addEventListener('click', () => showForm('signForm'));
+$('toRegister').addEventListener('click', () => showForm('regForm'));
+$('codeBack').addEventListener('click', () => showForm(pending && pending.mode === 'signin' ? 'signForm' : 'regForm'));
+
+/* ---------- Google Analytics: switched on when GA_ID is set in wrangler.jsonc ---------- */
+function startAnalytics(id){
+  if (!/^G-[A-Z0-9]+$/.test(id)) return;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function(){ dataLayer.push(arguments); };
+  gtag('js', new Date()); gtag('config', id);
+  const sc = document.createElement('script'); sc.async = true; sc.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+  document.head.appendChild(sc);
+}
+const track = (name, params) => { if (window.gtag) gtag('event', name, params || {}); };
+
+/* ---------- hidden sign-out for testing: tap the word "reserved" in the footer ---------- */
+$('signOut').addEventListener('click', () => {
+  if (!token || !confirm('Sign out of this account on this phone?')) return;
+  api('/api/signout', {});                                // ends the sign-in on the server too
+  token = null;
+  S.me = null; S.phase = 'idle'; S.autoAt = 0; adShownThisLoad = false;
+  $('adModal').hidden = true; clearTimeout(lockTimer);
+  showReg('signForm');
+});
+
+/* ---------- start ---------- */
+setInterval(() => { if (S.me && !document.hidden && S.phase !== 'choose' && !S.busy) reloadMe(); }, 60 * 1000);   // keep the ang pow fresh
+(async function start(){
+  const cfg = await api('/api/config');
+  S.siteKey = cfg.turnstileSiteKey; tsReady();
+  if (cfg.gaId) startAnalytics(cfg.gaId);
+  if (cfg.dailyTries) document.querySelectorAll('.nTries').forEach(el => el.textContent = cfg.dailyTries);
+  loadContent();
+  await refresh();
+})();
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad" async defer></script>
+<style>.pos{color:var(--win)}.neg{color:var(--lose)}.tswrap{padding:10px}.tsslot{min-height:65px;margin:12px 0 4px}.tsslot:empty{min-height:0;margin:0}.note.small{font-size:12.5px;color:var(--dim);margin:10px 0 0}</style>
+</body>
+</html>
