@@ -29,6 +29,7 @@
 
   // Settings. TURNSTILE_SECRET is NOT here: it is added in the dashboard as a Secret.
   "vars": {
+    "GA_ID": "G-EL9X3SJQCX",
     "TURNSTILE_SITEKEY": "0x4AAAAAAGP2hSKnavdhfwJL",
     "MAIL_FROM": "Game N Huat <noreply@test.gamenhuat.com>",
     "POT_DEFAULT": "1000000",
