@@ -29,7 +29,6 @@
 
   // Settings. TURNSTILE_SECRET is NOT here: it is added in the dashboard as a Secret.
   "vars": {
-    "GA_ID": "G-EL9X3SJQCX",
     "TURNSTILE_SITEKEY": "0x4AAAAAAGP2hSKnavdhfwJL",
     "MAIL_FROM": "Game N Huat <noreply@test.gamenhuat.com>",
     "POT_DEFAULT": "1000000",
@@ -38,7 +37,7 @@
     "SHOWDOWN_START": "2027-02-06",
     "EVENT_END": "2027-02-20",
     "ALLOW_EARLY": "1",   // test site: lets you play before 16 Jan. Remove on the live site.
-    "GA_ID": "",          // Google Analytics Measurement ID, for example "G-ABC123XYZ". Empty = off.
+    "GA_ID": "G-EL9X3SJQCX",          // Google Analytics Measurement ID, for example "G-ABC123XYZ". Empty = off.
     "ADMIN_EMAILS": "jk@epnox.com",   // who may use the admin panel (comma-separated)
     "ACCESS_TEAM": "epnox",
     "ACCESS_AUD": "8bb32c8d9ccc8b8bf238ddc9c687c60722ee685651f4133f211554659c7f1f5b"
